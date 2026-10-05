@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>英雄盲盒十连抽 · 角色档案卡 + 存档效果页</title>
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        min-height: 100vh;
+        font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+        color: #ffffff;
+        overflow-x: hidden;
+        background:
+            radial-gradient(circle at 20% 10%, rgba(255, 199, 64, 0.24), transparent 28%),
+            radial-gradient(circle at 85% 20%, rgba(142, 83, 255, 0.28), transparent 32%),
+            radial-gradient(circle at 50% 100%, rgba(40, 134, 255, 0.24), transparent 35%),
+            linear-gradient(135deg, #050816 0%, #10152d 42%, #050712 100%);
+    }
+
+    .page {
+        position: relative;
+        width: 100%;
+        min-height: 100vh;
+        padding: 42px 34px 34px;
+    }
+
+    .page::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.2));
+        pointer-events: none;
+    }
+
+    .star-field {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .star {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        border-radius: 999px;
+        background: rgba(255, 232, 162, 0.95);
+        box-shadow: 0 0 16px rgba(255, 213, 93, 0.95);
+        animation: fall 4.8s linear infinite;
+    }
+
+    @keyframes fall {
+        0% {
+            transform: translateY(-20px) scale(0.7);
+            opacity: 0;
+        }
+        15% {
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(110vh) scale(1.2);
+            opacity: 0;
+        }
+    }
+
+    .content {
+        position: relative;
+        z-index: 2;
+        max-width: 1380px;
+        margin: 0 auto;
+    }
+
+    .top-bar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 30px;
+    }
+
+    .title-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
+        border: 1px solid rgba(255, 213, 93, 0.5);
+        border-radius: 999px;
+        background: rgba(255, 213, 93, 0.1);
+        color: #ffe7a0;
+        font-size: 14px;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+        box-shadow: 0 0 24px rgba(255, 194, 64, 0.14);
+    }
+
+    h1 {
+        font-size: 48px;
+        line-height: 1.08;
+        letter-spacing: 2px;
+        text-shadow:
+            0 0 18px rgba(255, 198, 64, 0.6),
+            0 0 36px rgba(90, 123, 255, 0.34);
+    }
+
+    .subtitle {
+        margin-top: 12px;
+        color: rgba(255,255,255,0.68);
+        font-size: 16px;
+    }
+
+    .corner-note {
+        padding: 12px 15px;
+        border-radius: 16px;
+        color: rgba(255,255,255,0.72);
+        font-size: 13px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(10, 15, 35, 0.65);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 12px 36px rgba(0,0,0,0.24);
+        white-space: nowrap;
+    }
+
+    .hero-stage {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 22px;
+        align-items: stretch;
+    }
+
+    .panel {
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 26px;
+        background: rgba(8, 13, 31, 0.72);
+        box-shadow:
+            0 22px 80px rgba(0,0,0,0.38),
+            inset 0 0 42px rgba(255,255,255,0.035);
+        backdrop-filter: blur(14px);
+    }
+
+    .draw-panel {
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .draw-panel::before {
+        content: "";
+        position: absolute;
+        inset: -40%;
+        background: conic-gradient(
+            from 180deg,
+            transparent,
+            rgba(255, 218, 112, 0.08),
+            transparent,
+            rgba(116, 94, 255, 0.1),
+            transparent
+        );
+        animation: rotateAura 18s linear infinite;
+        pointer-events: none;
+    }
+
+    @keyframes rotateAura {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .section-header {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        z-index: 1;
+    }
+
+    .section-title {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
+
+    .draw-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 13px;
+        border-radius: 999px;
+        font-size: 13px;
+        color: #d9e5ff;
+        background: rgba(68, 96, 178, 0.28);
+        border: 1px solid rgba(143, 170, 255, 0.24);
+    }
+
+    .cards-grid {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(130px, 1fr));
+        gap: 16px;
+    }
+
+    .card {
+        position: relative;
+        min-height: 224px;
+        border-radius: 22px;
+        padding: 15px 13px;
+        overflow: hidden;
+        transform-style: preserve-3d;
+        animation: cardIn 0.8s ease both;
+        border: 1px solid rgba(255,255,255,0.16);
+        background:
+            linear-gradient(160deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02)),
+            rgba(17, 24, 54, 0.86);
+        box-shadow: 0 16px 38px rgba(0,0,0,0.36);
+    }
+
+    @keyframes cardIn {
+        from {
+            opacity: 0;
+            transform: translateY(28px) rotateX(16deg) scale(0.94);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) rotateX(0) scale(1);
+        }
+    }
+
+    .card::before {
+        content: "";
+        position: absolute;
+        inset: -60px;
+        opacity: 0.5;
+        transform: rotate(18deg);
+    }
+
+    .card.ssr {
+        border: 1px solid rgba(255, 221, 121, 0.98);
+        background:
+            radial-gradient(circle at 50% -20%, rgba(255, 235, 146, 0.7), transparent 35%),
+            linear-gradient(160deg, rgba(130, 82, 12, 0.96), rgba(31, 19, 4, 0.95));
+        box-shadow:
+            0 0 0 1px rgba(255,255,255,0.16),
+            0 0 28px rgba(255, 202, 74, 0.7),
+            0 0 80px rgba(255, 179, 26, 0.38),
+            0 20px 48px rgba(0,0,0,0.52);
+        animation: cardIn 0.8s ease both, ssrPulse 2.2s ease-in-out infinite;
+    }
+
+    .card.ssr::before {
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.42), transparent);
+        animation: shine 2.6s linear infinite;
+    }
+
+    .card.sr {
+        border: 1px solid rgba(197, 125, 255, 0.86);
+        background:
+            radial-gradient(circle at 50% -20%, rgba(196, 111, 255, 0.55), transparent 35%),
+            linear-gradient(160deg, rgba(66, 26, 116, 0.94), rgba(18, 12, 38, 0.96));
+        box-shadow:
+            0 0 24px rgba(172, 88, 255, 0.44),
+            0 18px 44px rgba(0,0,0,0.42);
+    }
+
+    .card.r {
+        border: 1px solid rgba(87, 169, 255, 0.76);
+        background:
+            radial-gradient(circle at 50% -20%, rgba(73, 155, 255, 0.42), transparent 38%),
+            linear-gradient(160deg, rgba(20, 53, 112, 0.92), rgba(9, 18, 42, 0.96));
+        box-shadow:
+            0 0 18px rgba(65, 149, 255, 0.24),
+            0 14px 34px rgba(0,0,0,0.38);
+    }
+
+    @keyframes shine {
+        from { transform: translateX(-120%) rotate(18deg); }
+        to { transform: translateX(120%) rotate(18deg); }
+    }
+
+    @keyframes ssrPulse {
+        0%, 100% {
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.16),
+                0 0 28px rgba(255, 202, 74, 0.7),
+                0 0 80px rgba(255, 179, 26, 0.38),
+                0 20px 48px rgba(0,0,0,0.52);
+        }
+        50% {
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.24),
+                0 0 46px rgba(255, 230, 135, 0.95),
+                0 0 110px rgba(255, 188, 39, 0.58),
+                0 20px 48px rgba(0,0,0,0.52);
+        }
+    }
+
+    .rarity {
+        position: relative;
+        display: inline-flex;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        z-index: 1;
+    }
+
+    .rarity.ssr {
+        color: #4c2b00;
+        background: linear-gradient(135deg, #fff2a8, #ffb82e);
+        box-shadow: 0 0 22px rgba(255, 214, 81, 0.8);
+    }
+
+    .rarity.sr {
+        color: #ffffff;
+        background: linear-gradient(135deg, #cc85ff, #7b39ff);
+        box-shadow: 0 0 18px rgba(174, 92, 255, 0.7);
+    }
+
+    .rarity.r {
+        color: #ffffff;
+        background: linear-gradient(135deg, #64c4ff, #246dff);
+        box-shadow: 0 0 14px rgba(85, 164, 255, 0.48);
+    }
+
+    .hero-name {
+        position: relative;
+        z-index: 1;
+        margin-top: 18px;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 1px;
+    }
+
+    .card.ssr .hero-name {
+        font-size: 34px;
+        color: #fff4bd;
+        text-shadow: 0 0 18px rgba(255, 217, 96, 0.9);
+    }
+
+    .identity {
+        position: relative;
+        z-index: 1;
+        margin-top: 10px;
+        min-height: 40px;
+        color: rgba(255,255,255,0.72);
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .quote {
+        position: relative;
+        z-index: 1;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255,255,255,0.15);
+        color: rgba(255,255,255,0.9);
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .tagline {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        right: 12px;
+        z-index: 1;
+        font-size: 12px;
+        color: rgba(255,255,255,0.58);
+    }
+
+    .side-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .stats-panel,
+    .archive-panel,
+    .profile-panel {
+        padding: 20px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 15px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: rgba(255,255,255,0.7);
+    }
+
+    .stat-value {
+        font-size: 26px;
+        font-weight: 900;
+    }
+
+    .stat-value.ssr-color {
+        color: #ffd965;
+        text-shadow: 0 0 18px rgba(255, 210, 74, 0.6);
+    }
+
+    .stat-value.sr-color {
+        color: #c783ff;
+        text-shadow: 0 0 18px rgba(184, 101, 255, 0.6);
+    }
+
+    .stat-value.r-color {
+        color: #6bbcff;
+        text-shadow: 0 0 18px rgba(85, 164, 255, 0.55);
+    }
+
+    .archive-box {
+        margin-top: 16px;
+        padding: 18px;
+        border-radius: 20px;
+        background:
+            linear-gradient(135deg, rgba(32, 255, 175, 0.09), rgba(57, 116, 255, 0.08)),
+            rgba(255,255,255,0.045);
+        border: 1px solid rgba(78, 255, 194, 0.18);
+    }
+
+    .archive-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .archive-row span:first-child {
+        color: rgba(255,255,255,0.58);
+    }
+
+    .archive-row span:last-child {
+        font-weight: 800;
+    }
+
+    .status-ok {
+        color: #5dffc9;
+        text-shadow: 0 0 18px rgba(63, 255, 192, 0.5);
+    }
+
+    .status-miss {
+        color: #ffcc6a;
+        text-shadow: 0 0 18px rgba(255, 187, 72, 0.45);
+    }
+
+    .profile-main {
+        margin-top: 16px;
+        padding: 18px;
+        min-height: 220px;
+        border-radius: 22px;
+        background:
+            radial-gradient(circle at 50% 0%, rgba(255,255,255,0.13), transparent 34%),
+            rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .profile-rarity {
+        font-size: 13px;
+        letter-spacing: 1px;
+        color: #ffe7a0;
+    }
+
+    .profile-name {
+        margin-top: 10px;
+        font-size: 36px;
+        font-weight: 900;
+    }
+
+    .profile-id {
+        margin-top: 9px;
+        color: rgba(255,255,255,0.68);
+        font-size: 14px;
+    }
+
+    .profile-quote {
+        margin-top: 16px;
+        line-height: 1.7;
+        font-size: 15px;
+        color: rgba(255,255,255,0.92);
+    }
+
+    .button-row {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .fake-button {
+        width: 100%;
+        padding: 15px 18px;
+        border-radius: 999px;
+        text-align: center;
+        font-size: 18px;
+        font-weight: 900;
+        color: #2d1700;
+        background: linear-gradient(135deg, #fff0a3, #ffb32d 55%, #ffde76);
+        box-shadow:
+            0 0 24px rgba(255, 195, 64, 0.5),
+            inset 0 1px 0 rgba(255,255,255,0.65);
+        user-select: none;
+    }
+
+    .modal-mask {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(0, 0, 0, 0.62);
+        backdrop-filter: blur(8px);
+    }
+
+    .modal {
+        position: relative;
+        width: min(620px, 92vw);
+        border-radius: 32px;
+        padding: 34px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 50% -20%, rgba(255, 231, 130, 0.52), transparent 36%),
+            linear-gradient(145deg, rgba(29, 20, 8, 0.98), rgba(11, 12, 30, 0.98));
+        border: 1px solid rgba(255, 221, 120, 0.66);
+        box-shadow:
+            0 0 70px rgba(255, 205, 72, 0.52),
+            0 30px 120px rgba(0,0,0,0.72);
+        text-align: center;
+        animation: modalIn 0.5s ease both;
+    }
+
+    @keyframes modalIn {
+        from {
+            opacity: 0;
+            transform: scale(0.86) translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .modal-title {
+        font-size: 30px;
+        font-weight: 900;
+        color: #ffe89a;
+        text-shadow: 0 0 24px rgba(255, 212, 80, 0.86);
+    }
+
+    .modal-name {
+        margin-top: 16px;
+        font-size: 54px;
+        font-weight: 900;
+        letter-spacing: 2px;
+    }
+
+    .modal-id {
+        margin-top: 8px;
+        color: rgba(255,255,255,0.72);
+    }
+
+    .modal-quote {
+        margin-top: 20px;
+        min-height: 34px;
+        color: #ffffff;
+        font-size: 19px;
+        line-height: 1.7;
+    }
+
+    .close-tip {
+        margin-top: 22px;
+        color: rgba(255,255,255,0.48);
+        font-size: 13px;
+    }
+
+    .bottom-note {
+        margin-top: 20px;
+        text-align: right;
+        color: rgba(255,255,255,0.42);
+        font-size: 12px;
+    }
+
+    @media (max-width: 1100px) {
+        .hero-stage {
+            grid-template-columns: 1fr;
+        }
+
+        .cards-grid {
+            grid-template-columns: repeat(2, minmax(130px, 1fr));
+        }
+
+        .top-bar {
+            flex-direction: column;
+        }
+
+        .corner-note {
+            white-space: normal;
+        }
+
+        h1 {
+            font-size: 38px;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="star-field" id="starField"></div>
+
+<div class="page">
+    <div class="content">
+        <div class="top-bar">
+            <div class="title-block">
+                <div class="title-kicker">十连抽结果 · 英雄档案 · Python 存档</div>
+                <h1>英雄盲盒十连抽</h1>
+                <div class="subtitle">角色档案卡 + 存档效果页</div>
+            </div>
+            <div class="corner-note">抽卡结果与存档来自 Python 原代码</div>
+        </div>
+
+        <div class="hero-stage">
+            <section class="panel draw-panel">
+                <div class="section-header">
+                    <div class="section-title">十连抽结果区</div>
+                    <div class="draw-badge">本次展示记录：10 抽</div>
+                </div>
+                <div class="cards-grid" id="cardsGrid"></div>
+            </section>
+
+            <aside class="side-panel">
+                <section class="panel stats-panel">
+                    <div class="section-title">稀有度统计</div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">SSR 数量</span>
+                            <span class="stat-value ssr-color">3</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">SR 数量</span>
+                            <span class="stat-value sr-color">4</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">R 数量</span>
+                            <span class="stat-value r-color">3</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel profile-panel">
+                    <div class="section-title">英雄档案卡</div>
+                    <div class="profile-main" id="profileMain">
+                        <div class="profile-rarity">等待英雄登场</div>
+                        <div class="profile-name">英雄档案</div>
+                        <div class="profile-id">点击或查看任一卡牌</div>
+                        <div class="profile-quote">抽中英雄的名字、稀有度、身份、台词将在这里展示。</div>
+                    </div>
+                </section>
+
+                <section class="panel archive-panel">
+                    <div class="section-title">存档成功区</div>
+                    <div class="archive-box">
+                        <div class="archive-row">
+                            <span>文件名</span>
+                            <span>盲盒.txt</span>
+                        </div>
+                        <div class="archive-row">
+                            <span>状态</span>
+                            <span class="status-ok">已保存</span>
+                        </div>
+                        <div class="archive-row">
+                            <span>保存内容</span>
+                            <span>英雄池数据</span>
+                        </div>
+                    </div>
+                    <div class="button-row">
+                        <div class="fake-button">再抽一次</div>
+                    </div>
+                </section>
+            </aside>
+        </div>
+
+        <div class="bottom-note">抽卡结果由 Python 新增代码生成；JavaScript 仅负责页面展示，不重新执行随机逻辑。</div>
+    </div>
+</div>
+
+<div class="modal-mask" id="modalMask">
+    <div class="modal" id="modalBox">
+        <div class="modal-title" id="modalTitle">SSR 英雄降临</div>
+        <div class="modal-name" id="modalName">英雄</div>
+        <div class="modal-id" id="modalId">身份</div>
+        <div class="modal-quote" id="modalQuote"></div>
+        <div class="close-tip">点击任意位置关闭</div>
+    </div>
+</div>
+
+<script>
+    const drawResults = [{"序号": 1, "名字": "索隆", "稀有度": "SR", "身份": "草帽海贼团剑士", "台词": "我要成为世界第一大剑豪！"}, {"序号": 2, "名字": "路飞", "稀有度": "SSR", "身份": "草帽海贼团船长", "台词": "我是要成为海贼王的男人！"}, {"序号": 3, "名字": "路飞", "稀有度": "SSR", "身份": "草帽海贼团船长", "台词": "我是要成为海贼王的男人！"}, {"序号": 4, "名字": "沙僧", "稀有度": "R", "身份": "西天取经师徒护法", "台词": "踏实行路，护你周全。"}, {"序号": 5, "名字": "索隆", "稀有度": "SR", "身份": "草帽海贼团剑士", "台词": "我要成为世界第一大剑豪！"}, {"序号": 6, "名字": "敖丙", "稀有度": "SR", "身份": "东海龙族太子", "台词": "一念沧海，一念星河。"}, {"序号": 7, "名字": "沙僧", "稀有度": "R", "身份": "西天取经师徒护法", "台词": "踏实行路，护你周全。"}, {"序号": 8, "名字": "路飞", "稀有度": "SSR", "身份": "草帽海贼团船长", "台词": "我是要成为海贼王的男人！"}, {"序号": 9, "名字": "娜美", "稀有度": "R", "身份": "草帽海贼团航海士", "台词": "前路的风向，由我掌控！"}, {"序号": 10, "名字": "索隆", "稀有度": "SR", "身份": "草帽海贼团剑士", "台词": "我要成为世界第一大剑豪！"}];
+    const heroPool = [{"名字": "路飞", "稀有度": "SSR", "身份": "草帽海贼团船长", "台词": "我是要成为海贼王的男人！"}, {"名字": "索隆", "稀有度": "SR", "身份": "草帽海贼团剑士", "台词": "我要成为世界第一大剑豪！"}, {"名字": "敖丙", "稀有度": "SR", "身份": "东海龙族太子", "台词": "一念沧海，一念星河。"}, {"名字": "娜美", "稀有度": "R", "身份": "草帽海贼团航海士", "台词": "前路的风向，由我掌控！"}, {"名字": "沙僧", "稀有度": "R", "身份": "西天取经师徒护法", "台词": "踏实行路，护你周全。"}, {"名字": "猪八戒", "稀有度": "R", "身份": "天蓬元帅转世", "台词": "吃饱了，才有力气闯荡江湖！"}];
+    const highRarityHero = {"序号": 2, "名字": "路飞", "稀有度": "SSR", "身份": "草帽海贼团船长", "台词": "我是要成为海贼王的男人！"};
+
+    const cardsGrid = document.getElementById("cardsGrid");
+    const profileMain = document.getElementById("profileMain");
+    const modalMask = document.getElementById("modalMask");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalName = document.getElementById("modalName");
+    const modalId = document.getElementById("modalId");
+    const modalQuote = document.getElementById("modalQuote");
+
+    function rarityClass(rarity) {
+        if (rarity === "SSR") return "ssr";
+        if (rarity === "SR") return "sr";
+        return "r";
+    }
+
+    function rarityTitle(rarity) {
+        if (rarity === "SSR") return "SSR 英雄降临";
+        if (rarity === "SR") return "稀有英雄";
+        return "普通角色";
+    }
+
+    function renderCards() {
+        drawResults.forEach((hero, index) => {
+            const card = document.createElement("div");
+            const cls = rarityClass(hero["稀有度"]);
+            card.className = "card " + cls;
+            card.style.animationDelay = (index * 0.08) + "s";
+            card.innerHTML = `
+                <div class="rarity ${cls}">${hero["稀有度"]}</div>
+                <div class="hero-name">${hero["名字"]}</div>
+                <div class="identity">${hero["身份"]}</div>
+                <div class="quote">${hero["台词"]}</div>
+                <div class="tagline">${rarityTitle(hero["稀有度"])}</div>
+            `;
+            card.addEventListener("mouseenter", () => renderProfile(hero));
+            card.addEventListener("click", () => showModal(hero));
+            cardsGrid.appendChild(card);
+        });
+
+        if (drawResults.length > 0) {
+            renderProfile(drawResults[0]);
+        }
+    }
+
+    function renderProfile(hero) {
+        const cls = rarityClass(hero["稀有度"]);
+        profileMain.innerHTML = `
+            <div class="profile-rarity">${rarityTitle(hero["稀有度"])} · ${hero["稀有度"]}</div>
+            <div class="profile-name">${hero["名字"]}</div>
+            <div class="profile-id">${hero["身份"]}</div>
+            <div class="profile-quote">“${hero["台词"]}”</div>
+        `;
+        profileMain.style.boxShadow = cls === "ssr"
+            ? "0 0 44px rgba(255, 210, 74, 0.35)"
+            : cls === "sr"
+                ? "0 0 34px rgba(181, 95, 255, 0.3)"
+                : "0 0 28px rgba(72, 153, 255, 0.22)";
+    }
+
+    function typeText(element, text) {
+        element.textContent = "";
+        let i = 0;
+        const timer = setInterval(() => {
+            element.textContent += text[i];
+            i++;
+            if (i >= text.length) {
+                clearInterval(timer);
+            }
+        }, 70);
+    }
+
+    function showModal(hero) {
+        modalTitle.textContent = rarityTitle(hero["稀有度"]);
+        modalName.textContent = hero["名字"];
+        modalId.textContent = hero["身份"];
+        modalQuote.textContent = "";
+        modalMask.style.display = "flex";
+        typeText(modalQuote, "“" + hero["台词"] + "”");
+    }
+
+    modalMask.addEventListener("click", () => {
+        modalMask.style.display = "none";
+    });
+
+    function createStars() {
+        const starField = document.getElementById("starField");
+        const total = highRarityHero && highRarityHero["稀有度"] === "SSR" ? 90 : 38;
+        for (let i = 0; i < total; i++) {
+            const star = document.createElement("div");
+            star.className = "star";
+            star.style.left = Math.random() * 100 + "vw";
+            star.style.top = -Math.random() * 100 + "px";
+            star.style.animationDelay = Math.random() * 5 + "s";
+            star.style.animationDuration = 3.2 + Math.random() * 3.8 + "s";
+            starField.appendChild(star);
+        }
+    }
+
+    renderCards();
+    createStars();
+
+    setTimeout(() => {
+        if (highRarityHero) {
+            showModal(highRarityHero);
+        }
+    }, 900);
+</script>
+</body>
+</html>

@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>热歌短视频工坊</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0b1a; font-family: 'Segoe UI', sans-serif; color: #fff; }
+    .app { width: 100vw; height: 100vh; display: flex; flex-direction: column; background: linear-gradient(145deg, #10102a, #1a1a3a); }
+    .header { flex-shrink: 0; padding: 14px 28px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+    .header h1 { font-size: 26px; font-weight: 700; background: linear-gradient(135deg,#f093fb,#f5576c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header .sub { font-size: 14px; color: #9a9acf; border-left: 3px solid #f5576c; padding-left: 16px; opacity: 0.8; }
+    .main { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+
+    /* 左栏 */
+    .left-panel {
+      width: 300px; flex-shrink: 0; padding: 16px; overflow-y: auto;
+      background: rgba(0,0,0,0.15); border-right: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .left-panel::-webkit-scrollbar { width: 4px; }
+    .left-panel::-webkit-scrollbar-thumb { background: #f5576c; border-radius: 4px; }
+    .upload-box {
+      background: rgba(255,255,255,0.04); border: 2px dashed rgba(255,255,255,0.12);
+      border-radius: 16px; padding: 12px 10px; text-align: center; transition: 0.25s; cursor: pointer;
+    }
+    .upload-box:hover { border-color: #f5576c; background: rgba(245,87,108,0.05); }
+    .upload-box label { display: block; width: 100%; height: 100%; font-size: 13px; color: #c8c8f0; cursor: pointer; }
+    .upload-box input[type="file"] { display: none; }
+    .file-name { font-size: 12px; color: #f093fb; margin-top: 4px; word-break: break-all; }
+    .upload-label { display: block; }
+    .bg-upload { margin-top: 8px; }
+
+    .style-section .label { font-size: 13px; color: #aaa; margin-bottom: 6px; }
+    .style-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+    .style-btn {
+      flex: 1; padding: 6px 0; border-radius: 30px; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04); color: #bbb; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: 0.2s; text-align: center; min-width: 50px;
+    }
+    .style-btn.active { border-color: #f5576c; background: rgba(245,87,108,0.2); color: #fff; box-shadow: 0 0 20px rgba(245,87,108,0.15); }
+    .style-btn:hover { background: rgba(255,255,255,0.08); }
+
+    .lyric-section {
+      background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px;
+    }
+    .lyric-section .label { font-size: 13px; color: #aaa; margin-bottom: 6px; }
+    .lyric-row { display: flex; gap: 6px; margin-bottom: 6px; }
+    .lyric-row input {
+      flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px; color: #ddd; padding: 4px 8px; font-size: 12px;
+    }
+    .lyric-row input::placeholder { color: #666; }
+    .lyric-actions { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+    .lyric-actions .btn-sm {
+      padding: 4px 14px; border-radius: 30px; border: none;
+      background: linear-gradient(135deg,#f093fb,#f5576c); color: #fff; font-weight: 600; font-size: 12px;
+      cursor: pointer; transition: 0.2s; white-space: nowrap;
+    }
+    .lyric-actions .btn-sm:hover { transform: scale(1.02); }
+    .lyric-actions .btn-sm.secondary { background: rgba(255,255,255,0.1); color: #ccc; border: 1px solid rgba(255,255,255,0.1); }
+    .lyric-section textarea {
+      width: 100%; height: 60px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; color: #ddd; padding: 6px 8px; font-size: 12px; resize: vertical; font-family: inherit;
+    }
+    .lyric-section textarea::placeholder { color: #666; }
+    .lyric-status { font-size: 11px; color: #888; margin-top: 4px; }
+
+    .controls { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .btn-primary {
+      background: linear-gradient(135deg,#f093fb,#f5576c); border: none; color: #fff; font-weight: 600;
+      padding: 12px 0; border-radius: 60px; font-size: 16px; cursor: pointer; transition: 0.2s;
+      box-shadow: 0 6px 24px rgba(245,87,108,0.3); width: 100%;
+    }
+    .btn-primary:disabled { opacity: 0.4; pointer-events: none; filter: grayscale(0.5); }
+    .btn-primary:hover:not(:disabled) { transform: scale(1.02); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #ddd;
+      padding: 10px 0; border-radius: 60px; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s;
+      width: 100%; text-align: center;
+    }
+    .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+    .btn-secondary:disabled { opacity: 0.3; pointer-events: none; }
+    .progress { width: 100%; height: 4px; background: #2a2a4a; border-radius: 4px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg,#f093fb,#f5576c); transition: width 0.2s; }
+    .status { font-size: 13px; color: #aab; display: flex; align-items: center; gap: 8px; min-height: 26px; }
+    .status .dot { width: 10px; height: 10px; border-radius: 50%; background: #3a3a6a; flex-shrink: 0; }
+    .status .dot.recording { background: #f5576c; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%{ opacity:1; transform:scale(1); } 50%{ opacity:0.4; transform:scale(0.8); } }
+
+    /* 中间预览 */
+    .center-panel {
+      flex: 1; padding: 16px; display: flex; justify-content: center; align-items: center;
+      min-width: 0; min-height: 0; background: radial-gradient(circle at 20% 30%, #151530, #0a0a18);
+    }
+    .preview-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+    #canvas {
+      width: 100%;
+      height: auto;
+      max-height: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 16px;
+      background: #0a0a18;
+      display: block;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+    }
+
+    /* 设置项样式 */
+    .setting-item {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+    }
+    .setting-label {
+      font-size: 12px; color: #888; min-width: 70px; text-align: right;
+    }
+    .setting-value {
+      font-size: 12px; color: #f093fb; min-width: 24px; text-align: left;
+    }
+    .setting-item input[type="range"] {
+      flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;
+      -webkit-appearance: none; appearance: none; cursor: pointer;
+    }
+    .setting-item input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; background: linear-gradient(135deg,#f093fb,#f5576c);
+      border-radius: 50%; cursor: pointer;
+    }
+    .setting-item select {
+      flex: 1; padding: 6px 10px; background: rgba(30,30,50,0.9);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+      color: #fff; font-size: 12px; cursor: pointer;
+    }
+    .setting-item select option {
+      background: #1a1a2e; color: #fff;
+    }
+    .setting-item input[type="color"] {
+      width: 32px; height: 32px; border: none; border-radius: 6px;
+      cursor: pointer; background: transparent;
+    }
+    .setting-item input[type="checkbox"] {
+      width: 18px; height: 18px; cursor: pointer;
+    }
+
+    /* 右栏榜单 */
+    .right-panel {
+      width: 240px; flex-shrink: 0; padding: 20px 16px; overflow-y: auto;
+      background: rgba(0,0,0,0.1); border-left: 1px solid rgba(255,255,255,0.05);
+    }
+    .right-panel::-webkit-scrollbar { width: 4px; }
+    .right-panel::-webkit-scrollbar-thumb { background: #f093fb; border-radius: 4px; }
+    .right-panel .panel-title { font-size: 16px; font-weight: 600; color: #ddd; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .right-panel .panel-title span { background: linear-gradient(135deg,#f093fb,#f5576c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .song-item {
+      padding: 10px 12px; margin-bottom: 10px; background: rgba(255,255,255,0.04); border-radius: 12px;
+      border-left: 3px solid rgba(245,87,108,0.3); transition: 0.2s; cursor: pointer;
+    }
+    .song-item:hover { background: rgba(255,255,255,0.08); transform: translateX(4px); }
+    .song-item .name { font-size: 14px; font-weight: 500; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .song-item .hot { font-size: 12px; color: #f093fb; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+
+    .footer {
+      flex-shrink: 0; padding: 8px 28px; border-top: 1px solid rgba(255,255,255,0.04);
+      font-size: 12px; color: #555; text-align: center; background: rgba(0,0,0,0.2);
+    }
+    @media (max-width: 1000px) { .right-panel { width: 180px; } .left-panel { width: 260px; } }
+    @media (max-width: 780px) {
+      .main { flex-direction: column; }
+      .left-panel, .right-panel { width: 100%; max-height: 200px; border-right: none; border-left: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+      .center-panel { flex: 1; min-height: 400px; }
+      .header .sub { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <h1>🎬 热歌短视频工坊</h1>
+    <div class="sub">上传图片 + 音乐 → 一键生成竖屏视频</div>
+  </header>
+
+  <div class="main">
+    <!-- 左栏 -->
+    <div class="left-panel">
+      <!-- 图片 -->
+      <div class="upload-box">
+        <label for="imageInput">
+          <span class="upload-label">🖼️ 点击上传图片 / 视频（可多选）</span>
+          <input type="file" id="imageInput" accept="image/*,video/*" multiple />
+          <div class="file-name" id="imageFileName">未选择文件</div>
+        </label>
+      </div>
+
+      <!-- 素材列表 -->
+      <div class="style-section" id="mediaListSection" style="display:none;">
+        <div class="label">📋 素材列表</div>
+        <div id="mediaList" style="font-size:11px;color:#aaa;max-height:120px;overflow-y:auto;"></div>
+        <div class="setting-item" style="margin-top:6px;">
+          <span class="setting-label">图片时长</span>
+          <input type="range" id="imageDuration" min="1" max="10" value="3" step="0.5" />
+          <span class="setting-value" id="imageDurationVal">3s</span>
+        </div>
+      </div>
+
+      <!-- 音频 -->
+      <div class="upload-box">
+        <label for="audioInput">
+          <span class="upload-label">🎵 点击上传歌曲 (MP3 / WAV)</span>
+          <input type="file" id="audioInput" accept="audio/*" />
+          <div class="file-name" id="audioFileName">未选择文件</div>
+        </label>
+      </div>
+
+      <!-- 歌词 -->
+      <div class="lyric-section">
+        <div class="label">📝 歌词设置</div>
+        <div class="upload-box">
+          <label for="lyricInput">
+            <span class="upload-label">📄 点击上传歌词文件 (.lrc / .txt)</span>
+            <input type="file" id="lyricInput" accept=".lrc,.txt" />
+            <div class="file-name" id="lyricFileName">未选择文件</div>
+          </label>
+        </div>
+        <textarea id="lyricText" placeholder="歌词将显示在这里，也可直接输入或粘贴"></textarea>
+        <div class="lyric-status" id="lyricStatus">💡 上传歌词文件或直接输入歌词</div>
+      </div>
+
+      <!-- 背景选择 -->
+      <div class="style-section">
+        <div class="label">🎨 选择视频背景</div>
+        <div class="style-selector">
+          <div class="style-btn active" data-style="none">无</div>
+          <div class="style-btn" data-style="cyber">赛博朋克</div>
+          <div class="style-btn" data-style="retro">复古胶片</div>
+          <div class="style-btn" data-style="fresh">唯美清新</div>
+          <div class="style-btn" data-style="dark">暗夜星空</div>
+          <div class="style-btn" data-style="sunset">日落黄昏</div>
+          <div class="style-btn" data-style="ocean">深海蓝调</div>
+          <div class="style-btn" data-style="custom">自定义</div>
+        </div>
+        <div class="upload-box bg-upload">
+          <label for="bgInput">
+            <span class="upload-label">📁 上传自定义背景图片</span>
+            <input type="file" id="bgInput" accept="image/*" />
+            <div class="file-name" id="bgFileName">未选择文件</div>
+          </label>
+        </div>
+      </div>
+
+      <!-- 画面大小 -->
+      <div class="style-section">
+        <div class="label">📐 画面大小</div>
+        <div class="setting-item">
+          <span class="setting-label">缩放比例</span>
+          <input type="range" id="imageScale" min="30" max="100" value="100" />
+          <span class="setting-value" id="imageScaleVal">100%</span>
+        </div>
+      </div>
+
+      <!-- 抖动设置 -->
+      <div class="style-section">
+        <div class="label">🎯 画面抖动效果</div>
+        <div class="setting-item">
+          <span class="setting-label">抖动频率</span>
+          <input type="range" id="shakeFreq" min="1" max="20" value="5" />
+          <span class="setting-value" id="shakeFreqVal">5</span>
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">抖动强度</span>
+          <input type="range" id="shakeIntensity" min="1" max="20" value="5" />
+          <span class="setting-value" id="shakeIntensityVal">5</span>
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">抖动方向</span>
+          <select id="shakeDirection">
+            <option value="all">全方位</option>
+            <option value="horizontal">左右</option>
+            <option value="vertical">上下</option>
+            <option value="diagonal">对角线</option>
+            <option value="irregular">不规则</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">画面跟随抖动</span>
+          <input type="checkbox" id="enableShake" />
+        </div>
+      </div>
+
+      <!-- 歌词样式 -->
+      <div class="style-section">
+        <div class="label">✨ 歌词样式</div>
+        <div class="setting-item">
+          <span class="setting-label">动画效果</span>
+          <select id="lyricAnimation">
+            <option value="fade">淡入淡出</option>
+            <option value="scale">缩放弹跳</option>
+            <option value="slideUp">向上滑入</option>
+            <option value="slideDown">向下滑入</option>
+            <option value="slideLeft">向左滑入</option>
+            <option value="slideRight">向右滑入</option>
+            <option value="rotate">旋转进入</option>
+            <option value="wave">波浪效果</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">单字动画</span>
+          <select id="charAnimation">
+            <option value="none">整体动画</option>
+            <option value="charFade">逐字淡入</option>
+            <option value="charScale">逐字缩放</option>
+            <option value="charSlide">逐字滑入</option>
+            <option value="charWave">波浪文字</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">文字颜色</span>
+          <input type="color" id="lyricColor" value="#00ffff" />
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">发光强度</span>
+          <input type="range" id="lyricGlow" min="0" max="50" value="20" />
+          <span class="setting-value" id="lyricGlowVal">20</span>
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">字体大小</span>
+          <input type="range" id="lyricSize" min="24" max="60" value="40" />
+          <span class="setting-value" id="lyricSizeVal">40</span>
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">歌词位置</span>
+          <input type="range" id="lyricPosition" min="10" max="90" value="90" />
+          <span class="setting-value" id="lyricPositionVal">90%</span>
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">边框效果</span>
+          <select id="lyricBorder">
+            <option value="none">无</option>
+            <option value="solid">实线边框</option>
+            <option value="dashed">虚线边框</option>
+            <option value="glow">发光边框</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">粒子特效</span>
+          <input type="checkbox" id="lyricParticles" checked />
+        </div>
+      </div>
+
+      <!-- 控制 -->
+      <div class="controls">
+        <button class="btn-secondary" id="previewBtn">👁️ 预览效果</button>
+        <button class="btn-primary" id="generateBtn">✨ 生成短视频</button>
+        <button class="btn-secondary" id="downloadBtn" disabled>⬇️ 下载视频</button>
+      </div>
+      <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">就绪，上传素材后开始生成</span></div>
+    </div>
+
+    <!-- 中间预览 -->
+    <div class="center-panel">
+      <div class="preview-container">
+        <canvas id="canvas" width="960" height="540"></canvas>
+      </div>
+    </div>
+
+    <!-- 右栏榜单 -->
+    <div class="right-panel">
+      <div class="panel-title">🔥 <span>热门歌曲榜</span></div>
+      <div id="songList"></div>
+    </div>
+  </div>
+
+  <div class="footer">⚡ 纯浏览器合成 · 无需上传服务器</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+<script>
+  (function() {
+    // ===== 歌曲榜单数据（修改这里） =====
+    const SONG_DATA = [
+      { name: '海屿你', hot: '🔥 999万', url: 'https://music.163.com/#/discover/toplist?id=3778678' },
+      { name: '玻璃', hot: '🔥 888万', url: 'https://music.163.com/#/discover/toplist?id=3778678' },
+      { name: '遐想', hot: '⭐ 765万', url: 'https://music.163.com/#/discover/toplist?id=3778678' },
+      { name: 'Баллада', hot: '⭐ 654万', url: 'https://music.163.com/#/discover/toplist?id=3778678' },
+      { name: '恋人', hot: '🔥 1200万', url: 'https://music.163.com/#/discover/toplist?id=3778678' },
+      { name: '甲乙丙丁 (你我怎么两清)', hot: '🔥 543万', url: 'https://music.163.com/#/discover/toplist?id=3778678' },
+      { name: '失眠', hot: '⭐ 432万', url: 'https://music.163.com/#/discover/toplist?id=3778678' },
+      { name: '雨过后的风景', hot: '🔥 321万', url: 'https://music.163.com/#/discover/toplist?id=3778678' },
+    ];
+    const songListEl = document.getElementById('songList');
+    function renderSongList() {
+      songListEl.innerHTML = '';
+      SONG_DATA.forEach(song => {
+        const item = document.createElement('div');
+        item.className = 'song-item';
+        item.innerHTML = `<div class="name">${song.name}</div><div class="hot"><span>🔥</span> ${song.hot}</div>`;
+        item.addEventListener('click', () => window.open(song.url, '_blank'));
+        songListEl.appendChild(item);
+      });
+    }
+    renderSongList();
+
+    // ===== DOM 引用 =====
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const imageInput = document.getElementById('imageInput');
+    const audioInput = document.getElementById('audioInput');
+    const imageFileName = document.getElementById('imageFileName');
+    const audioFileName = document.getElementById('audioFileName');
+    const lyricInput = document.getElementById('lyricInput');
+    const lyricFileName = document.getElementById('lyricFileName');
+    const lyricText = document.getElementById('lyricText');
+    const lyricStatus = document.getElementById('lyricStatus');
+    const styleBtns = document.querySelectorAll('.style-btn');
+    const previewBtn = document.getElementById('previewBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const progressBar = document.getElementById('progressBar');
+    const statusText = document.getElementById('statusText');
+    const statusDot = document.getElementById('statusDot');
+
+    // 设置控件
+    const shakeFreq = document.getElementById('shakeFreq');
+    const shakeFreqVal = document.getElementById('shakeFreqVal');
+    const shakeIntensity = document.getElementById('shakeIntensity');
+    const shakeIntensityVal = document.getElementById('shakeIntensityVal');
+    const shakeDirection = document.getElementById('shakeDirection');
+    const enableShake = document.getElementById('enableShake');
+    const lyricAnimation = document.getElementById('lyricAnimation');
+    const charAnimation = document.getElementById('charAnimation');
+    const lyricColor = document.getElementById('lyricColor');
+    const lyricGlow = document.getElementById('lyricGlow');
+    const lyricGlowVal = document.getElementById('lyricGlowVal');
+    const lyricSize = document.getElementById('lyricSize');
+    const lyricSizeVal = document.getElementById('lyricSizeVal');
+    const lyricPosition = document.getElementById('lyricPosition');
+    const lyricPositionVal = document.getElementById('lyricPositionVal');
+    const lyricBorder = document.getElementById('lyricBorder');
+    const lyricParticles = document.getElementById('lyricParticles');
+    const bgInput = document.getElementById('bgInput');
+    const bgFileName = document.getElementById('bgFileName');
+    const imageScaleSld = document.getElementById('imageScale');
+    const imageScaleVal = document.getElementById('imageScaleVal');
+    const imageDurationSld = document.getElementById('imageDuration');
+    const imageDurationVal = document.getElementById('imageDurationVal');
+    const mediaListSection = document.getElementById('mediaListSection');
+    const mediaListEl = document.getElementById('mediaList');
+
+    // ===== 全局状态 =====
+    let mediaItems = [];          // [{type:'image'|'video', image:Image, video:HTMLVideoElement, videoUrl:string, duration:number, name:string}]
+    let userAudioUrl = null;
+    let audioBuffer = null;
+    let currentStyle = 'none';
+    let customBgImage = null;
+    let isGenerating = false;
+    let isPreviewing = false;
+    let generatedBlob = null;
+    let animationId = null;
+    let isRecording = false;
+    let mediaRecorder = null;
+    let stopGenerationFn = null;
+    let lyricParticlesData = [];
+    let recordedChunks = [];
+    let lyrics = [];
+    let lyricMode = 'none';
+    let previewAudioCtx = null;
+    let previewSource = null;
+    let activeVideoItem = null;   // 当前正在播放的视频素材
+    let ffmpegInstance = null;    // ffmpeg.wasm 实例
+    let ffmpegLoading = false;   // ffmpeg 是否正在加载
+
+    // ===== 设置控件事件 =====
+    shakeFreq.addEventListener('input', () => { shakeFreqVal.textContent = shakeFreq.value; });
+    shakeIntensity.addEventListener('input', () => { shakeIntensityVal.textContent = shakeIntensity.value; });
+    lyricGlow.addEventListener('input', () => { lyricGlowVal.textContent = lyricGlow.value; });
+    lyricSize.addEventListener('input', () => { lyricSizeVal.textContent = lyricSize.value; });
+    lyricPosition.addEventListener('input', () => { lyricPositionVal.textContent = lyricPosition.value + '%'; });
+    imageScaleSld.addEventListener('input', () => { imageScaleVal.textContent = imageScaleSld.value + '%'; });
+    imageDurationSld.addEventListener('input', () => {
+      imageDurationVal.textContent = imageDurationSld.value + 's';
+      renderMediaList();
+    });
+
+    // ===== 辅助 =====
+    function updateStatus(text, recording = false) {
+      statusText.textContent = text;
+      statusDot.className = recording ? 'dot recording' : 'dot';
+    }
+    function setProgress(pct) {
+      progressBar.style.width = Math.min(pct, 100) + '%';
+    }
+    function resetDownload() {
+      generatedBlob = null;
+      downloadBtn.disabled = true;
+    }
+
+    // ===== 歌词解析 =====
+    function parseLRC(text) {
+      const lines = text.split(/\r?\n/);
+      const result = [];
+      const timeRegex = /\[(\d{2}):(\d{2}\.\d{2,3})\]/;
+      let plainLines = [];
+      let hasTimestamp = false;
+
+      for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        const match = line.match(timeRegex);
+        if (match) {
+          hasTimestamp = true;
+          const min = parseInt(match[1]);
+          const sec = parseFloat(match[2]);
+          const time = min * 60 + sec;
+          const textPart = line.replace(timeRegex, '').trim();
+          if (textPart) result.push({ time, text: textPart });
+        } else {
+          plainLines.push(line);
+        }
+      }
+
+      if (hasTimestamp && result.length > 0) {
+        return { type: 'lrc', data: result };
+      } else if (plainLines.length > 0) {
+        return { type: 'plain', data: plainLines.map(t => ({ time: 0, text: t })) };
+      }
+      return null;
+    }
+
+    function applyLyrics(parsed) {
+      if (!parsed) {
+        lyrics = [];
+        lyricMode = 'none';
+        lyricStatus.textContent = '❌ 解析失败，请检查格式';
+        return;
+      }
+      if (parsed.type === 'lrc') {
+        lyrics = parsed.data.sort((a,b) => a.time - b.time);
+        lyricMode = 'lrc';
+        lyricStatus.textContent = `✅ 同步歌词 (LRC) 共 ${lyrics.length} 句`;
+      } else if (parsed.type === 'plain') {
+        // 纯文本，需根据音频时长分配时间（生成时动态处理）
+        lyrics = parsed.data.map((item, idx) => ({ time: 0, text: item.text }));
+        lyricMode = 'plain';
+        lyricStatus.textContent = `📝 纯文本歌词共 ${lyrics.length} 句（将在生成时按时间均分）`;
+      }
+    }
+
+    // 从文本框解析并应用
+    function parseAndApplyLyrics() {
+      const text = lyricText.value;
+      if (!text.trim()) {
+        lyricStatus.textContent = '⚠️ 歌词内容为空';
+        return false;
+      }
+      const parsed = parseLRC(text);
+      if (parsed) {
+        applyLyrics(parsed);
+        return true;
+      } else {
+        lyricStatus.textContent = '❌ 无法解析歌词，请检查格式';
+        return false;
+      }
+    }
+
+    // ===== 音频上传 =====
+    audioInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      audioFileName.textContent = file.name;
+      if (userAudioUrl) URL.revokeObjectURL(userAudioUrl);
+      userAudioUrl = URL.createObjectURL(file);
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        updateStatus('音频加载成功，可生成视频');
+        resetDownload();
+        // 如果有纯文本歌词，分配时间
+        if (lyricMode === 'plain' && lyrics.length > 0) {
+          const duration = audioBuffer.duration;
+          const interval = duration / lyrics.length;
+          lyrics.forEach((item, idx) => { item.time = idx * interval; });
+          lyricStatus.textContent = `📝 纯文本已分配时间，共 ${lyrics.length} 句`;
+        }
+      } catch (err) {
+        console.error(err);
+        updateStatus('音频解码失败，请换一首歌');
+      }
+    });
+
+    // ===== 多素材上传 =====
+    imageInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+      imageFileName.textContent = files.map(f => f.name).join(', ');
+      resetDownload();
+      processMediaFiles(files);
+    });
+
+    async function processMediaFiles(files) {
+      // 清除旧数据
+      mediaItems.forEach(item => {
+        if (item.videoUrl) URL.revokeObjectURL(item.videoUrl);
+      });
+      mediaItems = [];
+      activeVideoItem = null;
+
+      const imgDuration = parseFloat(imageDurationSld.value);
+
+      for (const file of files) {
+        if (file.type.startsWith('video/')) {
+          await processVideoFile(file);
+        } else {
+          await processImageFile(file, imgDuration);
+        }
+      }
+
+      // 如果没有音频且第一个是视频，提取音频
+      if (!audioBuffer && mediaItems.length > 0 && mediaItems[0].type === 'video') {
+        try {
+          const firstVideoFile = files.find(f => f.type.startsWith('video/'));
+          if (firstVideoFile) {
+            const arrayBuffer = await firstVideoFile.arrayBuffer();
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            audioFileName.textContent = firstVideoFile.name;
+          }
+        } catch (err) {
+          console.error('提取音频失败:', err);
+        }
+      }
+
+      renderMediaList();
+      if (!isRecording && !isPreviewing && !animationId) drawStaticFrame();
+      updateStatus(`已加载 ${mediaItems.length} 个素材`);
+    }
+
+    function processImageFile(file, duration) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            mediaItems.push({ type: 'image', image: img, duration: duration, name: file.name });
+            resolve();
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function processVideoFile(file) {
+      return new Promise((resolve) => {
+        const videoUrl = URL.createObjectURL(file);
+        const video = document.createElement('video');
+        video.src = videoUrl;
+        video.crossOrigin = 'anonymous';
+        video.preload = 'metadata';
+        video.muted = true;
+
+        video.onloadedmetadata = () => {
+          mediaItems.push({
+            type: 'video',
+            video: video,
+            videoUrl: videoUrl,
+            duration: video.duration,
+            name: file.name
+          });
+          // 生成视频封面图
+          const tempCanvas = document.createElement('canvas');
+          const tempCtx = tempCanvas.getContext('2d');
+          tempCanvas.width = video.videoWidth;
+          tempCanvas.height = video.videoHeight;
+          video.currentTime = 0.1;
+          video.onseeked = () => {
+            tempCtx.drawImage(video, 0, 0);
+            const coverImg = new Image();
+            coverImg.onload = () => {
+              // 保存封面到 item 上用于静态帧
+              mediaItems[mediaItems.length - 1].cover = coverImg;
+              resolve();
+            };
+            coverImg.src = tempCanvas.toDataURL('image/jpeg');
+          };
+        };
+
+        video.onerror = () => {
+          updateStatus('视频加载失败: ' + file.name);
+          resolve();
+        };
+      });
+    }
+
+    function getMediaTimeline() {
+      // 返回每个素材的 startTime 和该素材在时间轴上的总时长
+      const timeline = [];
+      let currentTime = 0;
+      for (const item of mediaItems) {
+        const dur = item.type === 'video' ? (item.video.duration || 3) : parseFloat(imageDurationSld.value);
+        timeline.push({ item, startTime: currentTime, endTime: currentTime + dur });
+        currentTime += dur;
+      }
+      return { timeline, totalDuration: currentTime };
+    }
+
+    function getActiveMediaItem(currentTime) {
+      if (mediaItems.length === 0) return null;
+      const { timeline } = getMediaTimeline();
+      // 循环处理：currentTime 可能超过总时长
+      const totalDur = timeline.length > 0 ? timeline[timeline.length - 1].endTime : 0;
+      if (totalDur === 0) return timeline[0];
+
+      let t = currentTime % totalDur;
+      for (const entry of timeline) {
+        if (t >= entry.startTime && t < entry.endTime) {
+          return { item: entry.item, localTime: t - entry.startTime };
+        }
+      }
+      // fallback：返回最后一个
+      return { item: timeline[timeline.length - 1].item, localTime: 0 };
+    }
+
+    function renderMediaList() {
+      if (mediaItems.length === 0) {
+        mediaListSection.style.display = 'none';
+        return;
+      }
+      mediaListSection.style.display = 'block';
+      mediaListEl.innerHTML = mediaItems.map((item, i) => {
+        const icon = item.type === 'video' ? '🎬' : '🖼️';
+        const dur = item.type === 'video' ? (item.video.duration || 0).toFixed(1) + 's' : parseFloat(imageDurationSld.value) + 's';
+        return `<div style="padding:3px 0;display:flex;align-items:center;gap:6px;">
+          <span>${icon}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name}</span><span style="color:#f093fb;">${dur}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // ===== 歌词文件上传 =====
+    lyricInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      lyricFileName.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        lyricText.value = ev.target.result;
+        parseAndApplyLyrics();
+      };
+      reader.readAsText(file, 'utf-8');
+    });
+
+    // ===== 背景选择 =====
+    styleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.style === 'custom' && !customBgImage) {
+          updateStatus('请先上传自定义背景图片');
+          return;
+        }
+        styleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentStyle = btn.dataset.style;
+        if (btn.dataset.style !== 'custom') {
+          customBgImage = null;
+        }
+        if (!isRecording && !animationId) drawStaticFrame();
+        resetDownload();
+      });
+    });
+
+    bgInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      bgFileName.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          customBgImage = img;
+          currentStyle = 'custom';
+          styleBtns.forEach(b => b.classList.remove('active'));
+          const customBtn = document.querySelector('[data-style="custom"]');
+          if (customBtn) customBtn.classList.add('active');
+          if (!isRecording && !animationId) drawStaticFrame();
+          resetDownload();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // ===== 绘制静态帧 =====
+    function drawStaticFrame() {
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      drawBackground(ctx, w, h, currentStyle);
+      if (mediaItems.length > 0) {
+        const item = mediaItems[0];
+        const imgSrc = item.type === 'video' ? (item.cover || item.image) : item.image;
+        if (imgSrc) {
+          // cover 模式：与 drawFrame 保持一致
+          const imageScale = parseInt(imageScaleSld.value) / 100;
+          const canvasRatio = w / h;
+          const imgRatio = imgSrc.width / imgSrc.height;
+          const coverScale = imgRatio > canvasRatio ? (h / imgSrc.height) : (w / imgSrc.width);
+          const dw = imgSrc.width * coverScale * imageScale;
+          const dh = imgSrc.height * coverScale * imageScale;
+          const dx = (w - dw) / 2;
+          const dy = (h - dh) / 2;
+          ctx.drawImage(imgSrc, dx, dy, dw, dh);
+        }
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.font = '24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('请上传图片或视频', w/2, h/2);
+      }
+      applyStyleOverlay(ctx, w, h, currentStyle);
+    }
+
+    function getCurrentLyric(currentTime) {
+      if (lyrics.length === 0) return null;
+      let found = null;
+      for (let i = 0; i < lyrics.length; i++) {
+        if (currentTime >= lyrics[i].time) {
+          found = lyrics[i];
+        } else break;
+      }
+      return found;
+    }
+
+    function getShakeOffset(time) {
+      const freq = parseInt(shakeFreq.value) * 0.5;
+      const intensity = parseInt(shakeIntensity.value) * 0.5;
+      const direction = shakeDirection.value;
+      let dx = 0, dy = 0;
+
+      switch (direction) {
+        case 'all':
+          dx = Math.sin(time * freq) * intensity + Math.cos(time * freq * 1.3) * intensity * 0.5;
+          dy = Math.cos(time * freq) * intensity + Math.sin(time * freq * 1.7) * intensity * 0.5;
+          break;
+        case 'horizontal':
+          dx = Math.sin(time * freq) * intensity * 2;
+          break;
+        case 'vertical':
+          dy = Math.sin(time * freq) * intensity * 2;
+          break;
+        case 'diagonal':
+          dx = Math.sin(time * freq) * intensity;
+          dy = Math.sin(time * freq) * intensity;
+          break;
+        case 'irregular':
+          // 使用多个不同频率的正弦波叠加产生不规则抖动
+          dx = Math.sin(time * freq * 1.7) * intensity * 0.7
+             + Math.cos(time * freq * 3.1) * intensity * 0.5
+             + Math.sin(time * freq * 5.3) * intensity * 0.4
+             + Math.cos(time * freq * 0.7) * intensity * 0.6;
+          dy = Math.cos(time * freq * 1.9) * intensity * 0.6
+             + Math.sin(time * freq * 2.8) * intensity * 0.5
+             + Math.cos(time * freq * 4.1) * intensity * 0.4
+             + Math.sin(time * freq * 0.9) * intensity * 0.7;
+          break;
+      }
+      return { dx, dy };
+    }
+
+    function drawFrame(energy, progress, currentTime) {
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      drawBackground(ctx, w, h, currentStyle);
+
+      const shakeEnabled = enableShake.checked;
+      const rawShake = getShakeOffset(currentTime);
+      const shakeX = shakeEnabled ? rawShake.dx : 0;
+      const shakeY = shakeEnabled ? rawShake.dy : 0;
+
+      const active = getActiveMediaItem(currentTime);
+      if (active) {
+        const { item, localTime } = active;
+        const scaleFactor = shakeEnabled ? (0.9 + energy * 0.2) : 1.0;
+        const imageScale = parseInt(imageScaleSld.value) / 100;
+
+        // cover 模式：100% 时画面沾满全屏不失调
+        const canvasRatio = w / h;
+
+        if (item.type === 'video' && item.video) {
+          // 管理视频播放状态：只在素材切换时 seek
+          if (activeVideoItem !== item) {
+            if (activeVideoItem && activeVideoItem.video) {
+              activeVideoItem.video.pause();
+            }
+            item.video.currentTime = localTime;
+            item.video.play().catch(() => {});
+            activeVideoItem = item;
+          }
+          const imgSrc = item.video;
+          const srcW = item.video.videoWidth || imgSrc.width;
+          const srcH = item.video.videoHeight || imgSrc.height;
+          const imgRatio = srcW / srcH;
+          // cover: 用较大的维度填满画布
+          const coverScale = imgRatio > canvasRatio ? (h / srcH) : (w / srcW);
+          const baseW = srcW * coverScale * imageScale;
+          const baseH = srcH * coverScale * imageScale;
+          const dw = baseW * scaleFactor;
+          const dh = baseH * scaleFactor;
+          ctx.save();
+          const rot = shakeEnabled ? (energy - 0.5) * 0.03 : 0;
+          ctx.translate(w/2 + shakeX, h/2 + shakeY);
+          ctx.rotate(rot);
+          ctx.drawImage(imgSrc, -dw/2, -dh/2, dw, dh);
+          ctx.restore();
+        } else {
+          const imgSrc = item.type === 'video' ? (item.cover || item.image) : item.image;
+          if (imgSrc) {
+            const srcW = imgSrc.width;
+            const srcH = imgSrc.height;
+            const imgRatio = srcW / srcH;
+            const coverScale = imgRatio > canvasRatio ? (h / srcH) : (w / srcW);
+            const baseW = srcW * coverScale * imageScale;
+            const baseH = srcH * coverScale * imageScale;
+            const dw = baseW * scaleFactor;
+            const dh = baseH * scaleFactor;
+            ctx.save();
+            const rot = shakeEnabled ? (energy - 0.5) * 0.03 : 0;
+            ctx.translate(w/2 + shakeX, h/2 + shakeY);
+            ctx.rotate(rot);
+            ctx.drawImage(imgSrc, -dw/2, -dh/2, dw, dh);
+            ctx.restore();
+          }
+        }
+      }
+
+      applyStyleOverlay(ctx, w, h, currentStyle, energy);
+
+      if (lyrics.length > 0) {
+        const lyric = getCurrentLyric(currentTime);
+        if (lyric) {
+          const text = lyric.text;
+          const fontSize = parseInt(lyricSize.value);
+          const glowIntensity = parseInt(lyricGlow.value);
+          const animationType = lyricAnimation.value;
+          const borderType = lyricBorder.value;
+          const showParticles = lyricParticles.checked;
+
+          const timeSinceStart = currentTime - lyric.time;
+          let animProgress = Math.min(timeSinceStart * 5, 1);
+
+          ctx.save();
+          ctx.font = `bold ${fontSize}px "PingFang SC","Microsoft YaHei",sans-serif`;
+          const metrics = ctx.measureText(text);
+          const textWidth = metrics.width;
+
+          const lyricY = h * (parseInt(lyricPosition.value) / 100);
+          let x = w / 2;
+          let y = lyricY;
+          let opacity = 1;
+          let scale = 1;
+          let rotation = 0;
+
+          switch (animationType) {
+            case 'fade':
+              opacity = animProgress;
+              break;
+            case 'scale':
+              scale = 1 + Math.sin(animProgress * Math.PI) * 0.3;
+              opacity = 1;
+              break;
+            case 'slideUp':
+              y = lyricY + (1 - animProgress) * 100;
+              opacity = animProgress;
+              break;
+            case 'slideDown':
+              y = lyricY - (1 - animProgress) * 100;
+              opacity = animProgress;
+              break;
+            case 'slideLeft':
+              x = w / 2 - (1 - animProgress) * 100;
+              opacity = animProgress;
+              break;
+            case 'slideRight':
+              x = w / 2 + (1 - animProgress) * 100;
+              opacity = animProgress;
+              break;
+            case 'rotate':
+              rotation = (1 - animProgress) * Math.PI * 2;
+              scale = animProgress;
+              opacity = animProgress;
+              break;
+            case 'wave':
+              y = lyricY + Math.sin(animProgress * Math.PI * 4) * 20;
+              opacity = animProgress;
+              break;
+          }
+
+          ctx.globalAlpha = opacity;
+          ctx.translate(x, y);
+          ctx.scale(scale, scale);
+          ctx.rotate(rotation);
+
+          const charAnimType = charAnimation.value;
+          const chars = text.split('');
+          const charWidths = chars.map(c => ctx.measureText(c).width);
+          const totalWidth = charWidths.reduce((a, b) => a + b, 0);
+          let currentX = -totalWidth / 2;
+
+          ctx.shadowColor = lyricColor.value;
+          ctx.shadowBlur = glowIntensity;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.font = `bold ${fontSize}px "PingFang SC","Microsoft YaHei",sans-serif`;
+
+          if (charAnimType === 'none') {
+            const gradient = ctx.createLinearGradient(-textWidth/2, 0, textWidth/2, 0);
+            gradient.addColorStop(0, lyricColor.value);
+            gradient.addColorStop(0.5, '#ffffff');
+            gradient.addColorStop(1, lyricColor.value);
+            ctx.fillStyle = gradient;
+            ctx.textAlign = 'center';
+            ctx.fillText(text, 0, 0);
+          } else {
+            for (let i = 0; i < chars.length; i++) {
+              const char = chars[i];
+              const cw = charWidths[i];
+              const charProgress = Math.min(animProgress * chars.length - i + 1, 1);
+              const clampedProgress = Math.max(0, charProgress);
+
+              ctx.save();
+              ctx.translate(currentX + cw / 2, 0);
+
+              if (charAnimType === 'charFade') {
+                ctx.globalAlpha = clampedProgress;
+              } else if (charAnimType === 'charScale') {
+                const s = clampedProgress < 0.5 ? clampedProgress * 2 : 2 - clampedProgress * 2;
+                ctx.scale(s, s);
+              } else if (charAnimType === 'charSlide') {
+                const offsetY = (1 - clampedProgress) * 50;
+                ctx.translate(0, offsetY);
+                ctx.globalAlpha = clampedProgress;
+              } else if (charAnimType === 'charWave') {
+                const waveOffset = Math.sin(currentTime * 8 + i * 0.5) * 15;
+                ctx.translate(0, waveOffset);
+              }
+
+              const gradient = ctx.createLinearGradient(-totalWidth/2, 0, totalWidth/2, 0);
+              gradient.addColorStop(0, lyricColor.value);
+              gradient.addColorStop(0.5, '#ffffff');
+              gradient.addColorStop(1, lyricColor.value);
+              ctx.fillStyle = gradient;
+              ctx.fillText(char, -cw / 2, 0);
+
+              ctx.restore();
+              currentX += cw;
+            }
+          }
+
+          if (showParticles) {
+            updateLyricParticles(0, 0, textWidth, fontSize, currentTime);
+            drawLyricParticles(ctx);
+          }
+
+          ctx.restore();
+        }
+      }
+    }
+
+    function updateLyricParticles(x, y, textWidth, fontSize, time) {
+      const particleCount = 15;
+      lyricParticlesData = [];
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2;
+        const dist = 30 + Math.sin(time * 3 + i) * 20;
+        lyricParticlesData.push({
+          x: x + Math.cos(angle) * dist,
+          y: y + Math.sin(angle) * dist,
+          size: 3 + Math.sin(time * 5 + i * 0.5) * 2,
+          alpha: 0.6 + Math.sin(time * 4 + i) * 0.3
+        });
+      }
+    }
+
+    function drawLyricParticles(ctx) {
+      for (const p of lyricParticlesData) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    // ===== 预览效果 =====
+    async function startPreview() {
+      if (isPreviewing) {
+        stopPreview();
+        return;
+      }
+      if (mediaItems.length === 0) { updateStatus('请先上传图片或视频'); return; }
+      if (!audioBuffer) { updateStatus('请先上传音频或视频'); return; }
+      if (lyrics.length === 0 && lyricText.value.trim()) {
+        parseAndApplyLyrics();
+      }
+      if (lyricMode === 'plain' && lyrics.length > 0 && lyrics[0].time === 0 && audioBuffer) {
+        const duration = audioBuffer.duration;
+        const interval = duration / lyrics.length;
+        lyrics.forEach((item, idx) => { item.time = idx * interval; });
+      }
+
+      isPreviewing = true;
+      previewBtn.textContent = '⏹ 停止预览';
+      generateBtn.disabled = true;
+      setProgress(0);
+      updateStatus('👁️ 循环预览中...', true);
+
+      const w = canvas.width, h = canvas.height;
+      previewAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = previewAudioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const gainNode = previewAudioCtx.createGain();
+      gainNode.gain.value = 0.8;
+      analyser.connect(gainNode);
+      gainNode.connect(previewAudioCtx.destination);
+
+      const duration = audioBuffer.duration;
+      let startTime = previewAudioCtx.currentTime;
+      let elapsed = 0;
+      let loopCount = 0;
+
+      function startAudioSource() {
+        if (previewSource) {
+          try { previewSource.stop(); } catch(e) {}
+          previewSource.disconnect();
+        }
+        previewSource = previewAudioCtx.createBufferSource();
+        previewSource.buffer = audioBuffer;
+        previewSource.connect(analyser);
+        startTime = previewAudioCtx.currentTime;
+        previewSource.start(0);
+        previewSource.onended = () => {
+          // 自动由 animate 循环处理，这里做兜底
+        };
+      }
+
+      startAudioSource();
+
+      // 预播放所有视频素材
+      activeVideoItem = null;
+      mediaItems.forEach(item => {
+        if (item.type === 'video' && item.video) {
+          item.video.currentTime = 0;
+          item.video.loop = false;
+          item.video.muted = true;
+        }
+      });
+
+      function animate(time) {
+        if (!isPreviewing) return;
+
+        elapsed = previewAudioCtx.currentTime - startTime;
+        if (elapsed >= duration) {
+          // 循环：重新创建音频源并重置计时
+          loopCount++;
+          startAudioSource();
+          elapsed = 0;
+          activeVideoItem = null;
+        }
+
+        const pct = (elapsed / duration) * 100;
+        setProgress(pct);
+
+        analyser.getByteFrequencyData(dataArray);
+        let lowSum = 0;
+        const bins = Math.min(10, dataArray.length);
+        for (let i = 0; i < bins; i++) lowSum += dataArray[i];
+        const avgLow = lowSum / bins / 255;
+
+        drawFrame(avgLow, elapsed / duration, elapsed);
+        animationId = requestAnimationFrame(animate);
+      }
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function stopPreview() {
+      isPreviewing = false;
+      previewBtn.textContent = '👁️ 预览效果';
+      if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+      if (previewSource) {
+        try { previewSource.stop(); } catch(e) {}
+        previewSource = null;
+      }
+      if (previewAudioCtx) {
+        try { previewAudioCtx.close(); } catch(e) {}
+        previewAudioCtx = null;
+      }
+      // 暂停所有视频素材
+      mediaItems.forEach(item => {
+        if (item.type === 'video' && item.video) {
+          item.video.pause();
+          item.video.currentTime = 0;
+        }
+      });
+      activeVideoItem = null;
+      previewBtn.disabled = false;
+      generateBtn.disabled = false;
+      updateStatus('✅ 预览结束');
+      setProgress(0);
+      drawStaticFrame();
+    }
+
+    // ===== ffmpeg.wasm 转换 =====
+    async function initFFmpeg() {
+      if (ffmpegInstance) return ffmpegInstance;
+      if (ffmpegLoading) {
+        return new Promise((resolve) => {
+          const check = setInterval(() => {
+            if (ffmpegInstance) { clearInterval(check); resolve(ffmpegInstance); }
+          }, 200);
+        });
+      }
+      ffmpegLoading = true;
+      updateStatus('⚙️ 正在加载 MP4 编码器 (~31MB，首次较慢)...');
+      try {
+        const { FFmpeg } = FFmpegWASM;
+        ffmpegInstance = new FFmpeg();
+        ffmpegInstance.on('log', ({ message }) => { console.log('[ffmpeg]', message); });
+        // 显式指定 core.wasm 地址，避免 CDN 自动解析失败
+        await ffmpegInstance.load({
+          coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+        });
+        console.log('✅ ffmpeg.wasm 加载成功');
+        updateStatus('✅ MP4 编码器就绪');
+      } catch (e) {
+        console.error('❌ FFmpeg 加载失败:', e);
+        ffmpegInstance = null;
+        updateStatus('⚠️ MP4 编码器加载失败，将使用 WebM 格式');
+      }
+      ffmpegLoading = false;
+      setProgress(0);
+      return ffmpegInstance;
+    }
+
+    async function convertWebmToMp4(webmBlob) {
+      const ffmpeg = await initFFmpeg();
+      if (!ffmpeg) return webmBlob; // 加载失败，回退到 webm
+
+      updateStatus('🔄 正在转换为 MP4...');
+      console.log('开始转换, webm 大小:', (webmBlob.size / 1024 / 1024).toFixed(1), 'MB');
+
+      try {
+        const inputData = new Uint8Array(await webmBlob.arrayBuffer());
+        await ffmpeg.writeFile('input.webm', inputData);
+        // -c copy 只换容器不重编码，速度快且无损
+        await ffmpeg.exec(['-i', 'input.webm', '-c', 'copy', 'output.mp4']);
+        const outputData = await ffmpeg.readFile('output.mp4');
+        await ffmpeg.deleteFile('input.webm').catch(() => {});
+        await ffmpeg.deleteFile('output.mp4').catch(() => {});
+        console.log('转换完成, mp4 大小:', (outputData.length / 1024 / 1024).toFixed(1), 'MB');
+        return new Blob([outputData], { type: 'video/mp4' });
+      } catch (e) {
+        console.error('MP4 转换失败:', e);
+        updateStatus('⚠️ MP4 转换失败，使用 WebM 格式下载');
+        return webmBlob;
+      }
+    }
+
+    // ===== 生成视频（含歌词）=====
+    async function toggleGeneration() {
+      // 如果正在生成中，点击即为停止
+      if (isGenerating && stopGenerationFn) {
+        updateStatus('⏹ 用户手动停止，正在保存...');
+        stopGenerationFn();
+        return;
+      }
+      if (mediaItems.length === 0) { updateStatus('请先上传图片或视频'); return; }
+      if (!audioBuffer) { updateStatus('请先上传音频或视频'); return; }
+      // 如果没有歌词，尝试从文本框解析一次
+      if (lyrics.length === 0 && lyricText.value.trim()) {
+        parseAndApplyLyrics();
+      }
+      // 如果是纯文本且未分配时间
+      if (lyricMode === 'plain' && lyrics.length > 0 && lyrics[0].time === 0 && audioBuffer) {
+        const duration = audioBuffer.duration;
+        const interval = duration / lyrics.length;
+        lyrics.forEach((item, idx) => { item.time = idx * interval; });
+      }
+
+      resetDownload();
+      isGenerating = true;
+      previewBtn.disabled = true;
+      generateBtn.disabled = true;
+      downloadBtn.disabled = true;
+      setProgress(0);
+      updateStatus('准备合成...');
+
+      const w = canvas.width, h = canvas.height;
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const dest = audioCtx.createMediaStreamDestination();
+      source.connect(analyser);
+      analyser.connect(dest);
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0.8;
+      analyser.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      const stream = canvas.captureStream(30);
+      const audioStream = dest.stream;
+      const audioTracks = audioStream.getAudioTracks();
+      if (audioTracks.length > 0) stream.addTrack(audioTracks[0]);
+
+      const mimeTypes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+      let mimeType = mimeTypes.find(t => MediaRecorder.isTypeSupported(t));
+      if (!mimeType) {
+        updateStatus('浏览器不支持视频录制，请用 Chrome');
+        isGenerating = false;
+        generateBtn.disabled = false;
+        return;
+      }
+
+      mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 3000000 });
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+
+      const duration = audioBuffer.duration;
+      let startTime = audioCtx.currentTime;
+      let elapsed = 0;
+
+      source.start(0);
+
+      // 预加载所有视频素材
+      activeVideoItem = null;
+      mediaItems.forEach(item => {
+        if (item.type === 'video' && item.video) {
+          item.video.currentTime = 0;
+          item.video.muted = true;
+        }
+      });
+
+      mediaRecorder.start(100);
+      isRecording = true;
+      generateBtn.textContent = '⏹ 停止生成';
+      generateBtn.disabled = false;
+      updateStatus('🎬 录制中...（点击「停止生成」可随时结束）', true);
+
+      let lastDrawTime = performance.now();
+
+      function animate(time) {
+        if (!isRecording) return;
+        const now = performance.now();
+        const delta = (now - lastDrawTime) / 1000;
+        lastDrawTime = now;
+
+        elapsed = audioCtx.currentTime - startTime;
+        if (elapsed >= duration) {
+          stopRecordingAndFinish();
+          return;
+        }
+
+        const pct = (elapsed / duration) * 100;
+        setProgress(pct);
+
+        analyser.getByteFrequencyData(dataArray);
+        let lowSum = 0;
+        const bins = Math.min(10, dataArray.length);
+        for (let i = 0; i < bins; i++) lowSum += dataArray[i];
+        const avgLow = lowSum / bins / 255;
+
+        drawFrame(avgLow, elapsed / duration, elapsed);
+        animationId = requestAnimationFrame(animate);
+      }
+
+      function stopRecordingAndFinish() {
+        stopGenerationFn = null;
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+        isRecording = false;
+        if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+        try { source.stop(); } catch(e) {}
+        // 暂停所有视频素材
+        mediaItems.forEach(item => {
+          if (item.type === 'video' && item.video) {
+            item.video.pause();
+            item.video.currentTime = 0;
+          }
+        });
+        activeVideoItem = null;
+
+        mediaRecorder.onstop = async () => {
+          const webmBlob = new Blob(recordedChunks, { type: mimeType });
+          isGenerating = false;
+          previewBtn.disabled = false;
+          generateBtn.disabled = false;
+          generateBtn.textContent = '✨ 生成短视频';
+          mediaRecorder = null;
+          recordedChunks = [];
+
+          updateStatus('🔄 正在转换为 MP4...');
+          setProgress(100);
+
+          const mp4Blob = await convertWebmToMp4(webmBlob);
+          generatedBlob = mp4Blob;
+          downloadBtn.disabled = false;
+          updateStatus('✅ 合成完成！正在自动下载...');
+
+          // 自动下载
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(mp4Blob);
+          a.download = `热歌短视频_${Date.now()}.mp4`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          updateStatus('✅ MP4 下载完成！');
+          setProgress(0);
+        };
+      }
+
+      // 存储停止函数引用，供外部停止调用
+      stopGenerationFn = stopRecordingAndFinish;
+
+      animate(performance.now());
+      mediaRecorder.onerror = (e) => {
+        console.error(e);
+        stopGenerationFn = null;
+        isRecording = false;
+        isGenerating = false;
+        previewBtn.disabled = false;
+        generateBtn.disabled = false;
+        generateBtn.textContent = '✨ 生成短视频';
+        updateStatus('录制出错，请重试');
+      };
+    }
+
+    // ===== 绘制辅助 =====
+    function drawBackground(ctx, w, h, style) {
+      if (style === 'custom' && customBgImage) {
+        const scale = Math.max(w / customBgImage.width, h / customBgImage.height);
+        const dw = customBgImage.width * scale;
+        const dh = customBgImage.height * scale;
+        const dx = (w - dw) / 2;
+        const dy = (h - dh) / 2;
+        ctx.drawImage(customBgImage, dx, dy, dw, dh);
+        return;
+      }
+      let grad;
+      switch(style) {
+        case 'cyber': grad = ctx.createLinearGradient(0,0,w,h); grad.addColorStop(0,'#0b0b2a'); grad.addColorStop(0.5,'#1a0a2e'); grad.addColorStop(1,'#0b0b2a'); break;
+        case 'retro': grad = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w*0.7); grad.addColorStop(0,'#4a3a2a'); grad.addColorStop(1,'#1a140e'); break;
+        case 'fresh': grad = ctx.createLinearGradient(0,0,0,h); grad.addColorStop(0,'#1a2a3a'); grad.addColorStop(0.5,'#2a3a4a'); grad.addColorStop(1,'#1a2a3a'); break;
+        case 'dark': grad = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w); grad.addColorStop(0,'#1a1a3a'); grad.addColorStop(0.5,'#0a0a1a'); grad.addColorStop(1,'#050508'); break;
+        case 'sunset': grad = ctx.createLinearGradient(0,0,0,h); grad.addColorStop(0,'#ff6b35'); grad.addColorStop(0.3,'#f7c59f'); grad.addColorStop(0.6,'#efefd0'); grad.addColorStop(1,'#0a0a18'); break;
+        case 'ocean': grad = ctx.createLinearGradient(0,0,0,h); grad.addColorStop(0,'#0077b6'); grad.addColorStop(0.5,'#00b4d8'); grad.addColorStop(1,'#03045e'); break;
+        default: grad = '#111';
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,w,h);
+    }
+
+    function applyStyleOverlay(ctx, w, h, style, energy = 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'overlay';
+      switch(style) {
+        case 'cyber': {
+          const grad = ctx.createRadialGradient(w*0.3,h*0.3,0,w*0.5,h*0.5,w*0.7);
+          grad.addColorStop(0, `rgba(255, 0, 200, ${0.08 + energy*0.1})`);
+          grad.addColorStop(0.5, `rgba(0, 200, 255, ${0.05 + energy*0.08})`);
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0,0,w,h);
+          ctx.fillStyle = `rgba(0,255,255,${0.03 + energy*0.04})`;
+          for (let y=0; y<h; y+=6) ctx.fillRect(0,y,w,2);
+          break;
+        }
+        case 'retro': {
+          ctx.fillStyle = `rgba(180, 100, 50, ${0.05 + energy*0.06})`;
+          ctx.fillRect(0,0,w,h);
+          const imageData = ctx.getImageData(0,0,w,h);
+          const data = imageData.data;
+          for (let i=0; i<data.length; i+=4) {
+            const noise = (Math.random() - 0.5) * 20 * (0.5 + energy);
+            data[i] += noise; data[i+1] += noise*0.6; data[i+2] += noise*0.3;
+          }
+          ctx.putImageData(imageData,0,0);
+          const vignette = ctx.createRadialGradient(w/2,h/2,w*0.2,w/2,h/2,w*0.8);
+          vignette.addColorStop(0,'rgba(0,0,0,0)');
+          vignette.addColorStop(1,'rgba(0,0,0,0.3)');
+          ctx.fillStyle = vignette;
+          ctx.fillRect(0,0,w,h);
+          break;
+        }
+        case 'fresh': {
+          ctx.fillStyle = `rgba(200, 230, 255, ${0.04 + energy*0.05})`;
+          ctx.fillRect(0,0,w,h);
+          const glow = ctx.createRadialGradient(w*0.8,h*0.1,0,w*0.6,h*0.2,w*0.5);
+          glow.addColorStop(0, `rgba(255,255,255,${0.1 + energy*0.1})`);
+          glow.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = glow;
+          ctx.fillRect(0,0,w,h);
+          break;
+        }
+        case 'dark': {
+          const stars = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w);
+          stars.addColorStop(0, `rgba(255,255,255,${0.02 + energy*0.03})`);
+          stars.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = stars;
+          ctx.fillRect(0,0,w,h);
+          break;
+        }
+        case 'sunset': {
+          const vignette = ctx.createRadialGradient(w/2,h/2,w*0.3,w/2,h/2,w);
+          vignette.addColorStop(0,'rgba(0,0,0,0)');
+          vignette.addColorStop(1,`rgba(0,0,0,${0.2 + energy*0.1})`);
+          ctx.fillStyle = vignette;
+          ctx.fillRect(0,0,w,h);
+          break;
+        }
+        case 'ocean': {
+          const wave = ctx.createRadialGradient(w/2,h,w*0.5,w/2,h,w);
+          wave.addColorStop(0, `rgba(255,255,255,${0.03 + energy*0.04})`);
+          wave.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = wave;
+          ctx.fillRect(0,0,w,h);
+          break;
+        }
+        case 'custom': {
+          break;
+        }
+      }
+      ctx.restore();
+    }
+
+    function fitImageToCanvas(img, w, h) {
+      const imgAspect = img.width / img.height;
+      const canvasAspect = w / h;
+      let dw, dh, dx, dy;
+      if (imgAspect > canvasAspect) {
+        dw = w; dh = w / imgAspect; dx = 0; dy = (h - dh)/2;
+      } else {
+        dh = h; dw = h * imgAspect; dx = (w - dw)/2; dy = 0;
+      }
+      return { dx, dy, dw, dh };
+    }
+
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        if (r > w/2) r = w/2;
+        if (r > h/2) r = h/2;
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        return this;
+      };
+    }
+
+    // ===== 事件绑定 =====
+    previewBtn.addEventListener('click', startPreview);
+    generateBtn.addEventListener('click', toggleGeneration);
+    downloadBtn.addEventListener('click', () => {
+      if (!generatedBlob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(generatedBlob);
+      a.download = `热歌短视频_${Date.now()}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    // 初始绘制
+    drawStaticFrame();
+    styleBtns.forEach(btn => {
+      btn.addEventListener('click', () => { if (!isRecording && !isPreviewing && !animationId) drawStaticFrame(); });
+    });
+    imageInput.addEventListener('change', () => { if (!isRecording && !isPreviewing && !animationId) drawStaticFrame(); });
+
+    // 手动解析按钮（可选，可以额外加，但我们已经自动解析了）
+    // 如果用户手动粘贴歌词，可提供一个“解析”按钮，但此处无需
+    // 我们在获取后自动解析，用户也可以修改文本框后，点击“获取歌词”会重新获取，但不会解析本地修改，可再增加一个“解析”按钮，但为了简洁，我们提供“获取歌词”会重新从网络获取。
+    // 用户手动修改后，可以点击“获取歌词”按钮（如果歌曲名和歌手未变）会覆盖，或者可以增加一个“应用歌词”按钮。
+    // 增加一个隐藏功能：如果用户修改文本框，可以双击文本框触发解析？
+    // 我们在文本框添加一个“blur”事件自动解析？
+    // 简单处理：用户如果手动修改，可以点击“获取歌词”但会重新网络请求，不好。
+    // 加一个“应用歌词”按钮，在文本框旁边。
+    // 我们增加一个小按钮“应用”在文本框旁边？但布局已满，可以监听文本框变化自动解析？但怕误触。
+    // 提供一个“解析歌词”按钮放在状态旁边。
+    // 干脆在状态文字上加点击事件？不优雅。
+    // 我们添加一个隐藏的“解析”操作：双击歌词状态文本触发解析。
+    lyricStatus.addEventListener('dblclick', () => {
+      if (lyricText.value.trim()) {
+        parseAndApplyLyrics();
+      }
+    });
+    // 另外，如果用户修改了文本框，失去焦点时自动解析？可考虑。
+    lyricText.addEventListener('blur', () => {
+      if (lyricText.value.trim()) {
+        parseAndApplyLyrics();
+      }
+    });
+
+    // 提示
+    console.log('💡 双击“歌词状态”可手动解析当前文本框内容');
+  })();
+</script>
+</body>
+</html>

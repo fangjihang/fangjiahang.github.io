@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>开阳笔记 - 发现美好</title>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background-color: #f8f8f8;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      padding: 8px 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      background: linear-gradient(135deg, #FF2442, #FF6B6B);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 24px;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .logo:hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(255, 36, 66, 0.3);
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 400px;
+      background: #f0f0f0;
+      border-radius: 20px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .search-box:focus-within {
+      background: #fff;
+      box-shadow: 0 0 0 2px rgba(255, 36, 66, 0.2);
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-box input::placeholder {
+      color: #999;
+    }
+
+    .nav-icons {
+      display: flex;
+      gap: 20px;
+    }
+
+    .nav-icons button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 22px;
+      color: #333;
+      padding: 6px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-icons button:hover {
+      background: #f0f0f0;
+      color: #FF2442;
+    }
+
+    .publish-header-btn {
+      background: linear-gradient(135deg, #FF2442, #FF6B6B) !important;
+      color: #fff !important;
+      border-radius: 20px !important;
+      padding: 8px 16px !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      border: none !important;
+      box-shadow: 0 2px 8px rgba(255, 36, 66, 0.3) !important;
+      min-width: 70px !important;
+      justify-content: center !important;
+    }
+
+    .publish-header-btn span {
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      color: #fff !important;
+      line-height: 1 !important;
+    }
+
+    .publish-header-btn:hover {
+      background: linear-gradient(135deg, #ff1a3a, #ff5a5a) !important;
+      color: #fff !important;
+      box-shadow: 0 4px 12px rgba(255, 36, 66, 0.5) !important;
+      transform: translateY(-1px) !important;
+    }
+
+    .category-bar {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: #fff;
+      z-index: 999;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .category-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category-list {
+      display: flex;
+      gap: 12px;
+      max-width: 1200px;
+      margin: 0 auto;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      padding: 0 16px;
+    }
+
+    .category-item {
+      display: inline-block;
+      padding: 8px 18px;
+      background: #f8f8f8;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 1px solid transparent;
+    }
+
+    .category-item.active {
+      border-color: #FF2442;
+      box-shadow: 0 2px 8px rgba(255, 36, 66, 0.3);
+    }
+
+    .category-item:hover:not(.active) {
+      background: #f0f0f0;
+      border-color: #eee;
+    }
+
+    main {
+      padding-top: 130px;
+      padding-bottom: 80px;
+    }
+
+    .content-feed {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .post-card {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .post-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .post-image {
+      width: 100%;
+      padding-top: 100%;
+      position: relative;
+      background: #f5f5f5;
+      overflow: hidden;
+    }
+
+    .post-image img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .post-card:hover .post-image img {
+      transform: scale(1.05);
+    }
+
+    .post-content {
+      padding: 12px;
+    }
+
+    .post-title {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 8px;
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .post-author {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .author-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FFB6C1, #FFC0CB);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+
+
+    .author-name {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .post-stats {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 12px;
+      color: #999;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s ease;
+    }
+
+    .stat-item.liked {
+      color: #FF2442;
+    }
+
+    .stat-item svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .stat-item.liked svg path {
+      fill: #FF2442;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 1px solid #f0f0f0;
+      padding: 8px 0;
+      display: none;
+    }
+
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: #999;
+      cursor: pointer;
+      padding: 4px 16px;
+      transition: color 0.2s ease;
+    }
+
+    .bottom-nav-item.active {
+      color: #FF2442;
+    }
+
+    .bottom-nav-item svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    @media (max-width: 1024px) {
+      .content-feed {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .content-feed {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .header-content {
+        gap: 8px;
+      }
+
+      .nav-icons {
+        gap: 12px;
+      }
+
+      .bottom-nav {
+        display: block;
+      }
+
+      .nav-icons {
+        display: none;
+      }
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+      padding: 4px;
+    }
+
+    .modal-body {
+      padding: 16px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .modal-image-wrapper {
+      width: 100%;
+      padding-top: 100%;
+      position: relative;
+      background: #f5f5f5;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .modal-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .modal-text {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #333;
+      margin-bottom: 16px;
+    }
+
+    .modal-stats {
+      display: flex;
+      gap: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .loading svg {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 12px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .carousel {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .carousel-track {
+      display: flex;
+      transition: transform 0.3s ease;
+    }
+
+    .carousel-slide {
+      flex: 0 0 100%;
+      width: 100%;
+      padding-top: 100%;
+      position: relative;
+      background: #f5f5f5;
+    }
+
+    .carousel-slide img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .carousel-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: background 0.2s ease;
+      z-index: 10;
+    }
+
+    .carousel-nav:hover {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .carousel-prev {
+      left: 12px;
+    }
+
+    .carousel-next {
+      right: 12px;
+    }
+
+    .carousel-indicators {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .carousel-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .carousel-indicator.active {
+      background: #fff;
+      width: 20px;
+      border-radius: 4px;
+    }
+
+    .carousel-count {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      color: #fff;
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px 8px;
+      border-radius: 12px;
+      z-index: 10;
+    }
+
+    .publish-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: #FF2442;
+    }
+
+    .form-group textarea {
+      resize: none;
+      line-height: 1.6;
+    }
+
+    .image-upload-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 12px;
+      border: 2px dashed #e0e0e0;
+      border-radius: 8px;
+      min-height: 100px;
+      transition: border-color 0.2s ease;
+    }
+
+    .image-upload-area:hover {
+      border-color: #FF2442;
+    }
+
+    .upload-btn {
+      width: 80px;
+      height: 80px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      color: #999;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .upload-btn:hover {
+      border-color: #FF2442;
+      color: #FF2442;
+    }
+
+    .image-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      object-fit: cover;
+      position: relative;
+    }
+
+    .image-preview-wrapper {
+      position: relative;
+    }
+
+    .image-preview-remove {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 20px;
+      height: 20px;
+      background: #FF2442;
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
+
+
+
+    .publish-btn {
+      background: linear-gradient(135deg, #FF2442, #FF6B6B);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 24px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 8px;
+    }
+
+    .publish-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(255, 36, 66, 0.4);
+    }
+
+    .publish-btn:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div class="logo">开阳笔记</div>
+      <div class="search-box">
+        <i data-lucide="search" width="16" height="16" color="#999"></i>
+        <input type="text" placeholder="搜索你感兴趣的内容" id="searchInput">
+      </div>
+      <div class="nav-icons">
+        <button id="publishHeaderBtn" class="publish-header-btn">
+          <i data-lucide="plus" width="18" height="18"></i>
+          <span>发布</span>
+        </button>
+        <button id="notificationBtn">
+          <i data-lucide="bell" width="22" height="22"></i>
+        </button>
+        <button id="messageBtn">
+          <i data-lucide="message-circle" width="22" height="22"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="category-bar">
+    <div class="category-list" id="categoryList">
+      <div class="category-item active" data-category="全部">全部</div>
+      <div class="category-item" data-category="穿搭">穿搭</div>
+      <div class="category-item" data-category="穷游">穷游</div>
+      <div class="category-item" data-category="Python">Python</div>
+      <div class="category-item" data-category="考研">考研</div>
+      <div class="category-item" data-category="考公">考公</div>
+      <div class="category-item" data-category="二级">二级</div>
+    </div>
+  </div>
+
+  <main>
+    <div class="content-feed" id="contentFeed">
+      <div class="loading">
+        <i data-lucide="loader-2"></i>
+        <p>加载中...</p>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <div class="bottom-nav-items">
+      <div class="bottom-nav-item">
+        <i data-lucide="home"></i>
+        <span>首页</span>
+      </div>
+      <div class="bottom-nav-item active">
+        <i data-lucide="compass"></i>
+        <span>发现</span>
+      </div>
+      <div class="bottom-nav-item">
+        <i data-lucide="plus-circle"></i>
+        <span>发布</span>
+      </div>
+      <div class="bottom-nav-item">
+        <i data-lucide="heart"></i>
+        <span>消息</span>
+      </div>
+      <div class="bottom-nav-item">
+        <i data-lucide="user"></i>
+        <span>我的</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">笔记详情</span>
+        <button class="modal-close" id="modalClose">×</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="publishModal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <span class="modal-title">发布笔记</span>
+        <button class="modal-close" id="publishClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="publish-form">
+          <div class="form-group">
+            <label>分类</label>
+            <select id="publishCategory">
+              <option value="穿搭">穿搭</option>
+              <option value="穷游">穷游</option>
+              <option value="Python">Python</option>
+              <option value="考研">考研</option>
+              <option value="考公">考公</option>
+              <option value="二级">二级</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>上传者</label>
+            <input type="text" id="publishAuthor" placeholder="请输入昵称" maxlength="10">
+          </div>
+          <div class="form-group">
+            <label>图片（可多选）</label>
+            <div class="image-upload-area" id="imageUploadArea">
+              <div class="upload-btn" onclick="document.getElementById('imageInput').click()">
+                <i data-lucide="plus" width="24" height="24"></i>
+                <span>上传图片</span>
+              </div>
+            </div>
+            <input type="file" id="imageInput" multiple accept="image/*" style="display: none;">
+          </div>
+          <div class="form-group">
+            <label>标题</label>
+            <input type="text" id="publishTitle" placeholder="请输入标题" maxlength="50">
+          </div>
+          <div class="form-group">
+            <label>正文</label>
+            <textarea id="publishContent" placeholder="分享你的想法..." rows="6" maxlength="500"></textarea>
+          </div>
+          <button class="publish-btn" id="publishBtn">发布</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const mockPosts = [
+      {
+        id: 1,
+        images: [
+          'https://img0.baidu.com/it/u=3582228593,3224407843&fm=253&app=138&f=JPEG?w=800&h=1426',
+          'https://img1.baidu.com/it/u=1053345785,2333778131&fm=253&app=138&f=JPEG?w=800&h=1423',
+          'https://img2.baidu.com/it/u=2162376531,3422311142&fm=253&app=138&f=JPEG?w=800&h=1320'
+        ],
+        title: '夏日穿搭灵感🍃清爽白色系穿搭，简约又高级',
+        author: { name: '穿搭日记', avatar: '衣' },
+        likes: 3567,
+        collects: 1234,
+        comments: 234,
+        category: '穿搭',
+        content: '夏天最爱的白色系穿搭来啦！\n\n👗 白色连衣裙 + 草帽 = 法式优雅\n👖 白衬衫 + 阔腿裤 = 职场干练\n🧥 白色防晒衫 + 短裤 = 休闲舒适\n\n白色真的太百搭了，怎么穿都好看！'
+      },
+      {
+        id: 2,
+        images: [
+          'https://b0.bdstatic.com/ugc/AYUg9t6lbrWj33qJ3YINSgb55343b23ba1b3587124a866d337f8f9.jpg',
+          'https://image-cdn.poizon.com/app/2025/community/92383806_byte2979032byte_b5292be0d11e6e4d6c5446b4efac9b39_iOS_w3174h4232.jpg',
+          'https://pic.rmb.bdstatic.com/bjh/bc11ebfa07c/250227/99645f64aaa8e99d2d42d0d2a43fd002.jpeg?x-bce-process=image/watermark,bucket_baidu-rmb-video-cover-1,image_YmpoL25ld3MvNjUzZjZkMjRlMDJiNjdjZWU1NzEzODg0MDNhYTQ0YzQucG5n,type_RlpMYW5UaW5nSGVpU01HQg==,w_19,text_QOmmmeWEv-S5seeovw==,size_19,x_14,y_14,interval_2,color_FFFFFF,effect_softoutline,shc_000000,blr_2,align_1',
+          ''
+        ],
+        title: '日常穿搭👖牛仔裤的N种搭配，百搭不出错',
+        author: { name: '搭配师', avatar: '搭' },
+        likes: 2789,
+        collects: 1123,
+        comments: 201,
+        category: '穿搭',
+        content: '牛仔裤真的太百搭了！\n\n👖 + 白T = 经典休闲\n👖 + 吊带 = 甜辣风\n👖 + 衬衫 = 通勤风\n👖 + 卫衣 = 运动风\n\n一条好的牛仔裤真的可以穿很久！'
+      },
+      {
+        id: 3,
+        images: [
+          'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fss2.meipian.me%2Fusers%2F74256963%2Fead73a6998e24dace17404a0796344c6.jpg%3Fmeipian-watermark%2Fbucket%2Fivwen%2Fkey%2FdXNlcnMvNzQyNTY5NjMvZWFkNzNhNjk5OGUyNGRhY2UxNzQwNGEwNzk2MzQ0YzYuanBn%2Fnickname%2F5b-D5aOw77yI6Zy56Zuz5bGx576K77yJ%2Fuserid%2FNzQyNTY5NjM%3D%2Fsign%2F5e0a90197ed37cbcc650b1f5d99a8eec%257cimageView2%2F2%2Fw%2F750%2Finterlace%2F0%2Fq%2F80&refer=http%3A%2F%2Fss2.meipian.me&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1786708974&t=d487c5b18dd3c8db0f299b7c38bbb1ad',
+          'https://q8.itc.cn/q_70/images03/20250417/864e0e6241f74c7d8656bd632e0234e3.jpeg'
+        ],
+        title: '穷游攻略🚂一千块玩转西安，学生党必看',
+        author: { name: '穷游达人', avatar: '穷' },
+        likes: 5678,
+        collects: 2345,
+        comments: 456,
+        category: '穷游',
+        content: '学生党穷游西安攻略来啦！\n\n🏯 Day1：兵马俑 + 华清池\n🏯 Day2：古城墙 + 钟楼鼓楼\n🏯 Day3：大雁塔 + 大唐不夜城\n\n💰 总花费：交通300 + 住宿200 + 门票200 + 餐饮300 = 1000元\n\n学生党一定要带学生证，好多景点半价！'
+      },
+      {
+        id: 4,
+        images: [
+          'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=400&fit=crop',
+        ],
+        title: '穷游云南🌄大理丽江七日游，人均2000',
+        author: { name: '背包客', avatar: '旅' },
+        likes: 4234,
+        collects: 1876,
+        comments: 312,
+        category: '穷游',
+        content: '云南穷游攻略分享！\n\n🌿 大理：洱海骑行、喜洲古镇、双廊\n🏔️ 丽江：古城、玉龙雪山、束河古镇\n\n🚄 交通：火车硬座最省钱\n🏠 住宿：青旅床位50-80元/晚\n🍜 美食：路边摊、本地小吃\n\n人均2000玩七天，超值！'
+      },
+      {
+        id: 5,
+        images: [
+          'https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=400&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=400&fit=crop'
+        ],
+        title: 'Python入门🐍零基础自学Python的正确姿势',
+        author: { name: '编程小白', avatar: '编' },
+        likes: 2345,
+        collects: 892,
+        comments: 156,
+        category: 'Python',
+        content: '零基础学Python攻略！\n\n📚 学习路线：\n1️⃣ 基础语法：变量、数据类型、条件判断、循环\n2️⃣ 函数与模块\n3️⃣ 文件操作\n4️⃣ 面向对象\n5️⃣ 实战项目\n\n💡 推荐资源：\n- 《Python编程：从入门到实践》\n- B站免费教程\n- LeetCode刷题\n\n坚持每天写代码，三个月就能入门！'
+      },
+      {
+        id: 6,
+        images: [
+          'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop'
+        ],
+        title: 'Python爬虫🕷️新手也能学会的爬虫教程',
+        author: { name: '数据分析师', avatar: '数' },
+        likes: 1892,
+        collects: 678,
+        comments: 89,
+        category: 'Python',
+        content: 'Python爬虫入门教程！\n\n📦 必备库：\n- requests：发送HTTP请求\n- BeautifulSoup：解析HTML\n- Scrapy：高级爬虫框架\n\n🎯 实战项目：\n- 爬取豆瓣电影Top250\n- 爬取知乎热榜\n- 爬取微博热搜\n\n⚠️ 注意遵守网站robots协议！'
+      },
+      {
+        id: 7,
+        images: [
+          'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=400&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=400&fit=crop'
+        ],
+        title: '考研经验📖一战上岸985，超详细备考攻略',
+        author: { name: '研究生学姐', avatar: '研' },
+        likes: 3456,
+        collects: 1456,
+        comments: 267,
+        category: '考研',
+        content: '一战上岸985的经验分享！\n\n📅 时间规划：\n- 3-6月：基础阶段\n- 7-9月：强化阶段\n- 10-12月：冲刺阶段\n\n📚 各科复习：\n- 英语：背单词、做真题\n- 政治：肖秀荣系列\n- 数学：张宇/李永乐\n- 专业课：真题+笔记\n\n坚持就是胜利，加油！'
+      },
+      {
+        id: 8,
+        images: [
+          'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=400&fit=crop'
+        ],
+        title: '考研英语📝阅读满分技巧，真题刷三遍',
+        author: { name: '英语学霸', avatar: '英' },
+        likes: 2134,
+        collects: 654,
+        comments: 98,
+        category: '考研',
+        content: '考研英语阅读满分技巧！\n\n📖 真题刷三遍：\n第一遍：计时做题，熟悉题型\n第二遍：精读文章，分析长难句\n第三遍：总结错题，归纳技巧\n\n💡 做题技巧：\n- 先看题干再读文章\n- 定位关键词\n- 排除干扰选项\n\n英语阅读是提分关键，一定要重视！'
+      },
+      {
+        id: 9,
+        images: [
+          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=400&h=400&fit=crop'
+        ],
+        title: '考公经验💼国考省考备考攻略，应届生必看',
+        author: { name: '公务员学长', avatar: '公' },
+        likes: 2890,
+        collects: 987,
+        comments: 178,
+        category: '考公',
+        content: '公务员备考攻略！\n\n📚 考试科目：\n- 行测：言语、判断、数量、资料、常识\n- 申论：归纳概括、综合分析、应用文、文章写作\n\n📅 备考计划：\n- 基础期：系统学习理论\n- 强化期：刷题+错题整理\n- 冲刺期：模拟考试\n\n🎯 选岗技巧：限制条件越多，竞争越小！'
+      },
+      {
+        id: 10,
+        images: [
+          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1633356122254-d28f2afe8957?w=400&h=400&fit=crop'
+        ],
+        title: '行测技巧⚡资料分析速算方法，提高做题速度',
+        author: { name: '行测大神', avatar: '测' },
+        likes: 1987,
+        collects: 876,
+        comments: 145,
+        category: '考公',
+        content: '资料分析速算技巧！\n\n⚡ 常用方法：\n- 估算：四舍五入简化计算\n- 直除法：直接相除看首位\n- 差分法：比较分数大小\n- 插值法：插入中间值比较\n\n📊 做题步骤：\n1️⃣ 读问题，圈关键词\n2️⃣ 找数据，定位材料\n3️⃣ 列式子，用技巧计算\n\n资料分析是行测提分最快的模块！'
+      },
+      {
+        id: 11,
+        images: [
+          'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=400&h=400&fit=crop'
+        ],
+        title: '计算机二级💻MS Office通关秘籍，一次通过',
+        author: { name: '二级学霸', avatar: '计' },
+        likes: 1567,
+        collects: 789,
+        comments: 123,
+        category: '二级',
+        content: '计算机二级MS Office通关秘籍！\n\n📝 考试内容：\n- 选择题（20分）\n- Word操作（30分）\n- Excel操作（30分）\n- PowerPoint操作（20分）\n\n💡 备考技巧：\n1️⃣ 刷真题！真题最重要\n2️⃣ Word重点：样式、目录、邮件合并\n3️⃣ Excel重点：函数、数据透视表\n4️⃣ PPT重点：母版、动画、放映\n\n多练习操作题，一定能过！'
+      },
+      {
+        id: 12,
+        images: [
+          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1517365830460-955ce3ccd263?w=400&h=400&fit=crop'
+        ],
+        title: '二级Excel📊高频函数汇总，考试必背',
+        author: { name: 'Excel达人', avatar: '表' },
+        likes: 1234,
+        collects: 567,
+        comments: 89,
+        category: '二级',
+        content: '二级Excel高频函数汇总！\n\n🔢 必会函数：\n- SUM/COUNT/AVERAGE：统计计算\n- IF/AND/OR：条件判断\n- VLOOKUP：垂直查找\n- INDEX+MATCH：万能查找\n- CONCATENATE：文本合并\n- LEFT/RIGHT/MID：文本截取\n- YEAR/MONTH/DAY：日期函数\n\n记住这些函数，Excel操作题轻松拿高分！'
+      }
+    ];
+
+    const STORAGE_KEY = 'kaiyang_notes_posts';
+    
+    function loadPosts() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          return [...mockPosts];
+        }
+      }
+      return [...mockPosts];
+    }
+
+    function savePosts(posts) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+    }
+
+    let posts = loadPosts();
+    let currentCategory = '全部';
+    let searchQuery = '';
+    const likedPosts = new Set();
+    const collectedPosts = new Set();
+
+    function formatNumber(num) {
+      if (num >= 10000) {
+        return (num / 10000).toFixed(1) + 'w';
+      } else if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'k';
+      }
+      return num;
+    }
+
+    function renderPosts(posts) {
+      const feed = document.getElementById('contentFeed');
+      feed.innerHTML = '';
+
+      if (posts.length === 0) {
+        feed.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+            <i data-lucide="search-x" width="48" height="48" color="#ccc" style="margin-bottom: 16px;"></i>
+            <p style="color: #999;">没有找到相关内容</p>
+          </div>
+        `;
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+        return;
+      }
+
+      posts.forEach((post, index) => {
+        const card = document.createElement('div');
+        card.className = 'post-card';
+        card.style.animationDelay = `${index * 0.05}s`;
+        card.innerHTML = `
+          <div class="post-image">
+            <img src="${post.images[0]}" alt="${post.title}" loading="lazy">
+          </div>
+          <div class="post-content">
+            <h3 class="post-title">${post.title}</h3>
+            <div class="post-author">
+              <div class="author-avatar">${post.author.avatar}</div>
+              <span class="author-name">${post.author.name}</span>
+            </div>
+
+          </div>
+        `;
+        card.addEventListener('click', () => openModal(post.id));
+        feed.appendChild(card);
+      });
+
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+
+    function filterPosts() {
+      let filtered = posts;
+
+      if (currentCategory !== '全部') {
+        filtered = filtered.filter(post => post.category === currentCategory);
+      }
+
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(post => 
+          post.title.toLowerCase().includes(query) ||
+          post.author.name.toLowerCase().includes(query) ||
+          post.content.toLowerCase().includes(query)
+        );
+      }
+
+      renderPosts(filtered);
+    }
+
+    let currentModalPostId = null;
+
+    function toggleLike(event, postId) {
+      event.stopPropagation();
+      if (likedPosts.has(postId)) {
+        likedPosts.delete(postId);
+      } else {
+        likedPosts.add(postId);
+      }
+      filterPosts();
+      updateModalStats(postId);
+    }
+
+    function toggleCollect(event, postId) {
+      event.stopPropagation();
+      if (collectedPosts.has(postId)) {
+        collectedPosts.delete(postId);
+      } else {
+        collectedPosts.add(postId);
+      }
+      filterPosts();
+      updateModalStats(postId);
+    }
+
+    function updateModalStats(postId) {
+      if (currentModalPostId !== postId) return;
+
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+
+      const modalStats = document.querySelector('.modal-stats');
+      if (!modalStats) return;
+
+      const likeItem = modalStats.children[0];
+      const collectItem = modalStats.children[1];
+
+      if (likedPosts.has(postId)) {
+        likeItem.classList.add('liked');
+      } else {
+        likeItem.classList.remove('liked');
+      }
+      likeItem.querySelector('span').textContent = formatNumber(post.likes + (likedPosts.has(postId) ? 1 : 0));
+
+      if (collectedPosts.has(postId)) {
+        collectItem.classList.add('liked');
+      } else {
+        collectItem.classList.remove('liked');
+      }
+      collectItem.querySelector('span').textContent = formatNumber(post.collects + (collectedPosts.has(postId) ? 1 : 0));
+    }
+
+    function openModal(postId) {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+
+      currentModalPostId = postId;
+      const modal = document.getElementById('modalOverlay');
+      const body = document.getElementById('modalBody');
+      const images = post.images || [post.image];
+
+      let carouselHtml = '';
+      if (images.length > 1) {
+        carouselHtml = `
+          <div class="carousel" id="modalCarousel">
+            <div class="carousel-track" id="carouselTrack">
+              ${images.map((img, idx) => `
+                <div class="carousel-slide">
+                  <img src="${img}" alt="${post.title} ${idx + 1}">
+                </div>
+              `).join('')}
+            </div>
+            <button class="carousel-nav carousel-prev" id="carouselPrev">‹</button>
+            <button class="carousel-nav carousel-next" id="carouselNext">›</button>
+            <div class="carousel-indicators" id="carouselIndicators">
+              ${images.map((_, idx) => `
+                <button class="carousel-indicator ${idx === 0 ? 'active' : ''}" data-index="${idx}"></button>
+              `).join('')}
+            </div>
+            <div class="carousel-count">1/${images.length}</div>
+          </div>
+        `;
+      } else {
+        carouselHtml = `
+          <div class="modal-image-wrapper">
+            <img src="${images[0]}" alt="${post.title}" class="modal-image">
+          </div>
+        `;
+      }
+
+      body.innerHTML = `
+        ${carouselHtml}
+        <div class="post-author" style="margin-bottom: 16px;">
+          <div class="author-avatar" style="width: 32px; height: 32px; font-size: 14px;">${post.author.avatar}</div>
+          <div>
+            <div style="font-size: 14px; font-weight: 500; color: #333;">${post.author.name}</div>
+            <div style="font-size: 12px; color: #999;">${post.category}</div>
+          </div>
+        </div>
+        <div class="modal-text">${post.content.replace(/\n/g, '<br>')}</div>
+      `;
+
+      modal.classList.add('active');
+
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+
+      if (images.length > 1) {
+        initCarousel(images.length);
+      }
+    }
+
+    window.carouselState = { currentSlide: 0 };
+
+    function initCarousel(totalSlides) {
+      window.carouselState.currentSlide = 0;
+
+      document.getElementById('carouselPrev').onclick = () => {
+        window.carouselState.currentSlide = (window.carouselState.currentSlide - 1 + totalSlides) % totalSlides;
+        updateCarousel(totalSlides);
+      };
+
+      document.getElementById('carouselNext').onclick = () => {
+        window.carouselState.currentSlide = (window.carouselState.currentSlide + 1) % totalSlides;
+        updateCarousel(totalSlides);
+      };
+
+      document.querySelectorAll('.carousel-indicator').forEach((indicator, index) => {
+        indicator.onclick = () => {
+          window.carouselState.currentSlide = index;
+          updateCarousel(totalSlides);
+        };
+      });
+    }
+
+    function updateCarousel(totalSlides) {
+      const track = document.getElementById('carouselTrack');
+      const indicators = document.querySelectorAll('.carousel-indicator');
+      const count = document.querySelector('.carousel-count');
+      const currentSlide = window.carouselState.currentSlide;
+
+      track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+      indicators.forEach((indicator, index) => {
+        indicator.classList.toggle('active', index === currentSlide);
+      });
+
+      count.textContent = `${currentSlide + 1}/${totalSlides}`;
+    }
+
+    document.getElementById('categoryList').addEventListener('click', (e) => {
+      if (e.target.classList.contains('category-item')) {
+        document.querySelectorAll('.category-item').forEach(item => item.classList.remove('active'));
+        e.target.classList.add('active');
+        currentCategory = e.target.dataset.category;
+        filterPosts();
+      }
+    });
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      filterPosts();
+    });
+
+    document.getElementById('modalClose').addEventListener('click', () => {
+      document.getElementById('modalOverlay').classList.remove('active');
+    });
+
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modalOverlay')) {
+        document.getElementById('modalOverlay').classList.remove('active');
+      }
+    });
+
+    const publishImages = [];
+
+    function openPublishModal() {
+      document.getElementById('publishModal').classList.add('active');
+      publishImages.length = 0;
+      document.getElementById('imageUploadArea').innerHTML = `
+        <div class="upload-btn" onclick="document.getElementById('imageInput').click()">
+          <i data-lucide="plus" width="24" height="24"></i>
+          <span>上传图片</span>
+        </div>
+      `;
+      document.getElementById('publishTitle').value = '';
+      document.getElementById('publishContent').value = '';
+      document.getElementById('publishAuthor').value = '';
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+
+    function closePublishModal() {
+      document.getElementById('publishModal').classList.remove('active');
+    }
+
+    document.getElementById('publishClose').addEventListener('click', closePublishModal);
+    document.getElementById('publishModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('publishModal')) {
+        closePublishModal();
+      }
+    });
+
+    document.getElementById('imageInput').addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) continue;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          publishImages.push(event.target.result);
+          renderImagePreviews();
+        };
+        reader.readAsDataURL(file);
+      }
+
+      e.target.value = '';
+    });
+
+
+
+    function renderImagePreviews() {
+      const area = document.getElementById('imageUploadArea');
+      const previews = publishImages.map((src, index) => `
+        <div class="image-preview-wrapper">
+          <img src="${src}" class="image-preview">
+          <div class="image-preview-remove" onclick="removeImage(${index})">×</div>
+        </div>
+      `).join('');
+
+      area.innerHTML = previews + `
+        <div class="upload-btn" onclick="document.getElementById('imageInput').click()">
+          <i data-lucide="plus" width="24" height="24"></i>
+          <span>上传图片</span>
+        </div>
+      `;
+
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+
+    window.removeImage = function(index) {
+      publishImages.splice(index, 1);
+      renderImagePreviews();
+    };
+
+    document.getElementById('publishBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+
+      const category = document.getElementById('publishCategory').value;
+      const authorName = document.getElementById('publishAuthor').value.trim();
+      const title = document.getElementById('publishTitle').value.trim();
+      const content = document.getElementById('publishContent').value.trim();
+
+      if (!authorName) {
+        alert('请输入上传者昵称');
+        return;
+      }
+
+      if (!title) {
+        alert('请输入标题');
+        return;
+      }
+
+      if (!content) {
+        alert('请输入正文内容');
+        return;
+      }
+
+      if (publishImages.length === 0) {
+        alert('请至少上传一张图片');
+        return;
+      }
+
+      const avatar = authorName.charAt(0) || '用';
+
+      const newPost = {
+        id: Date.now(),
+        images: publishImages,
+        title: title,
+        author: { name: authorName, avatar: avatar },
+        likes: 0,
+        collects: 0,
+        comments: 0,
+        category: category,
+        content: content
+      };
+
+      posts.unshift(newPost);
+      savePosts(posts);
+      filterPosts();
+      closePublishModal();
+    });
+
+    document.getElementById('publishHeaderBtn').addEventListener('click', openPublishModal);
+    document.querySelector('.bottom-nav-item:nth-child(3)').addEventListener('click', openPublishModal);
+
+    function initApp() {
+      try {
+        filterPosts();
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      } catch (e) {
+        console.error('Init error:', e);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+  </script>
+</body>
+</html>

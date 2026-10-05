@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D回忆照片墙</title>
+  <style>
+    /* ———— 完全保留您的原始样式 ———— */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.12) 0%, transparent 50%),
+        linear-gradient(180deg, #080b1a 0%, #101530 100%);
+      font-family: "Microsoft Yahei", sans-serif;
+    }
+
+    .stars {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background-image:
+        radial-gradient(2px 2px at 10% 15%, rgba(255,255,255,0.8), transparent),
+        radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(2px 2px at 40% 8%, rgba(255,255,255,0.7), transparent),
+        radial-gradient(1px 1px at 60% 25%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(2px 2px at 75% 10%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(1px 1px at 90% 18%, rgba(255,255,255,0.8), transparent);
+      background-size: 200px 200px;
+    }
+
+    .stage {
+      position: absolute;
+      left: 50%;
+      top: 45%;
+      width: 1800px;
+      height: 900px;
+      margin-left: -900px;
+      margin-top: -450px;
+      perspective: 1600px;
+      overflow: hidden;
+    }
+    .stage.hidden {
+      display: none;
+    }
+
+    .wall {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(12deg) rotateY(-22deg);
+    }
+
+    .row {
+      position: absolute;
+      left: 0;
+      height: 150px;
+      display: flex;
+      gap: 14px;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+    .row-1 { top: 8%; }
+    .row-2 { top: 24%; }
+    .row-3 { top: 40%; }
+    .row-4 { top: 56%; }
+
+    .pic {
+      position: relative;
+      width: 200px;
+      height: 135px;
+      flex-shrink: 0;
+      border: 5px solid #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 18px rgba(120,200,255,0.55), 0 0 34px rgba(0,0,0,0.45);
+      overflow: hidden;
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+    }
+    .pic img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .pic .depth {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transform: translateZ(calc(var(--z) * 1px)) scale(var(--scale));
+    }
+    .row .pic:nth-child(1)  .depth { --z: -80; --scale: 0.55; }
+    .row .pic:nth-child(2)  .depth { --z: -30; --scale: 0.68; }
+    .row .pic:nth-child(3)  .depth { --z: 20;  --scale: 0.82; }
+    .row .pic:nth-child(4)  .depth { --z: 80;  --scale: 1; }
+    .row .pic:nth-child(5)  .depth { --z: 150; --scale: 1.18; }
+    .row .pic:nth-child(6)  .depth { --z: 230; --scale: 1.35; }
+    .row .pic:nth-child(7)  .depth { --z: 320; --scale: 1.5; }
+    .row .pic:nth-child(8)  .depth { --z: 420; --scale: 1.65; }
+    .row .pic:nth-child(9)  .depth { --z: 320; --scale: 1.5; }
+    .row .pic:nth-child(10) .depth { --z: 230; --scale: 1.35; }
+    .row .pic:nth-child(11) .depth { --z: 150; --scale: 1.18; }
+    .row .pic:nth-child(12) .depth { --z: 80;  --scale: 1; }
+    .row .pic:nth-child(13) .depth { --z: 20;  --scale: 0.82; }
+    .row .pic:nth-child(14) .depth { --z: -30; --scale: 0.68; }
+    .row .pic:nth-child(15) .depth { --z: -80; --scale: 0.55; }
+
+    .reflection {
+      position: absolute;
+      left: 50%;
+      top: 78%;
+      width: 1800px;
+      height: 380px;
+      margin-left: -900px;
+      perspective: 1600px;
+      transform: rotateX(180deg) translateY(12px);
+      opacity: 0.35;
+      filter: blur(1px);
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .reflection.hidden {
+      display: none;
+    }
+    .reflection .wall { transform: rotateX(12deg) rotateY(-22deg); }
+    .reflection .pic { border-color: rgba(255,255,255,0.85); box-shadow: 0 0 12px rgba(120,200,255,0.35); }
+
+    .title {
+      position: absolute;
+      left: 50%;
+      bottom: 120px;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #fff;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .title h1 { font-size: 42px; letter-spacing: 8px; margin-bottom: 8px; text-shadow: 0 0 20px rgba(255,255,255,0.8); }
+
+    .audio-btn {
+      position: fixed;
+      right: 40px;
+      bottom: 40px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid #ffffff80;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+      z-index: 999;
+    }
+    .audio-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+
+    .upload-btn {
+      position: fixed;
+      left: 40px;
+      bottom: 40px;
+      padding: 14px 28px;
+      border-radius: 30px;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid #ffffff80;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+      z-index: 999;
+    }
+    .upload-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+
+    #fileInput { display: none; }
+
+    .empty-hint {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(255,255,255,0.5);
+      font-size: 18px;
+      letter-spacing: 4px;
+      z-index: 5;
+      pointer-events: none;
+      text-align: center;
+      line-height: 2;
+      display: none;
+    }
+    .empty-hint.show {
+      display: block;
+    }
+    .empty-hint span {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+
+  <div class="empty-hint" id="emptyHint">
+    <span>🖼️</span>
+    点击左下角「重新选择照片」<br>上传您的回忆
+  </div>
+
+  <div class="title">
+    <h1>我们的故事</h1>
+  </div>
+
+  <div class="stage" id="stageWrap">
+    <div class="wall">
+      <div class="row row-1" id="row1"></div>
+      <div class="row row-2" id="row2"></div>
+      <div class="row row-3" id="row3"></div>
+      <div class="row row-4" id="row4"></div>
+    </div>
+  </div>
+
+  <div class="reflection" id="reflectionWrap">
+    <div class="wall">
+      <div class="row row-1" id="refRow1"></div>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" multiple>
+  <button class="upload-btn" id="uploadBtn">📂 重新选择照片</button>
+
+  <audio id="bgMusic" loop preload="auto">
+    <source src="bgm.mp3" type="audio/mpeg">
+  </audio>
+  <button class="audio-btn" id="audioBtn">♫</button>
+
+  <script>
+    (function() {
+      // 滚动速度
+      const moveSpeed = 0.8;
+      const singlePicTotalW = 200 + 14;
+
+      let offsetX = 0;
+      let isPause = false;
+      let imgList = [];
+      let oneGroupWidth = 0;
+      let hasImages = false;
+      let totalGroups = 15; // 固定组数
+      let rowTotalWidth = 0;
+
+      const fileInput = document.getElementById('fileInput');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const rows = [
+        document.getElementById('row1'),
+        document.getElementById('row2'),
+        document.getElementById('row3'),
+        document.getElementById('row4')
+      ];
+      const refRow = document.getElementById('refRow1');
+      const stageWrap = document.getElementById('stageWrap');
+      const reflectionWrap = document.getElementById('reflectionWrap');
+      const emptyHint = document.getElementById('emptyHint');
+
+      function updateVisibility() {
+        if (hasImages && imgList.length > 0) {
+          stageWrap.classList.remove('hidden');
+          reflectionWrap.classList.remove('hidden');
+          emptyHint.classList.remove('show');
+        } else {
+          stageWrap.classList.add('hidden');
+          reflectionWrap.classList.add('hidden');
+          emptyHint.classList.add('show');
+        }
+      }
+
+      // 生成一组图片的HTML（带缓存）
+      let cachedGroupHTML = '';
+      function getGroupHTML() {
+        if (cachedGroupHTML) return cachedGroupHTML;
+        let html = '';
+        imgList.forEach((src, idx) => {
+          const i = idx % 15;
+          const zArr = [-80, -30, 20, 80, 150, 230, 320, 420, 320, 230, 150, 80, 20, -30, -80];
+          const sArr = [0.55, 0.68, 0.82, 1, 1.18, 1.35, 1.5, 1.65, 1.5, 1.35, 1.18, 1, 0.82, 0.68, 0.55];
+          html += `
+            <div class="pic">
+              <div class="depth" style="--z:${zArr[i]};--scale:${sArr[i]}">
+                <img src="${src}" alt="相册">
+              </div>
+            </div>
+          `;
+        });
+        cachedGroupHTML = html;
+        return html;
+      }
+
+      function buildWall() {
+        if (!imgList.length) {
+          rows.forEach(row => row.innerHTML = '');
+          refRow.innerHTML = '';
+          oneGroupWidth = 0;
+          rowTotalWidth = 0;
+          cachedGroupHTML = '';
+          return;
+        }
+
+        cachedGroupHTML = ''; // 重置缓存
+        oneGroupWidth = imgList.length * singlePicTotalW;
+
+        // 固定15组，不增不减
+        const groups = 15;
+        const groupHTML = getGroupHTML();
+
+        rows.forEach(row => {
+          row.innerHTML = '';
+          for (let i = 0; i < groups; i++) {
+            row.insertAdjacentHTML('beforeend', groupHTML);
+          }
+        });
+        refRow.innerHTML = '';
+        for (let i = 0; i < groups; i++) {
+          refRow.insertAdjacentHTML('beforeend', groupHTML);
+        }
+
+        rowTotalWidth = groups * oneGroupWidth;
+        offsetX = 0;
+        rows.forEach(r => r.style.transform = `translateX(0px)`);
+        refRow.style.transform = `translateX(0px)`;
+      }
+
+      function refreshWall() {
+        hasImages = imgList.length > 0;
+        updateVisibility();
+        buildWall();
+      }
+
+      // 文件上传
+      fileInput.onchange = e => {
+        const files = e.target.files;
+        if (!files.length) return;
+        imgList.forEach(url => { if (url.startsWith('blob:')) URL.revokeObjectURL(url); });
+        imgList = [];
+        for (const f of files) {
+          imgList.push(URL.createObjectURL(f));
+        }
+        refreshWall();
+      };
+
+      uploadBtn.onclick = () => fileInput.click();
+
+      stageWrap.addEventListener('mouseenter', () => { if (hasImages) isPause = true; });
+      stageWrap.addEventListener('mouseleave', () => { isPause = false; });
+
+      // ———— 核心：使用translateX循环移动，永不回弹 ————
+      function loop() {
+        if (!isPause && hasImages && oneGroupWidth > 0 && rowTotalWidth > 0) {
+          // 向左移动
+          offsetX -= moveSpeed;
+
+          // 当偏移量超过总宽度时，重置偏移量（无缝循环）
+          if (offsetX <= -rowTotalWidth) {
+            offsetX += rowTotalWidth;
+          }
+
+          // 应用变换
+          rows.forEach(r => r.style.transform = `translateX(${offsetX}px)`);
+          refRow.style.transform = `translateX(${offsetX}px)`;
+        }
+        requestAnimationFrame(loop);
+      }
+
+      // ———— 初始化：无图片，显示空状态 ————
+      imgList = [];
+      refreshWall();
+      loop();
+
+      // 背景音乐控制
+      const bgMusic = document.getElementById('bgMusic');
+      const audioBtn = document.getElementById('audioBtn');
+      let playFlag = false;
+      audioBtn.onclick = () => {
+        playFlag = !playFlag;
+        if (playFlag) {
+          bgMusic.play().catch(() => {});
+          audioBtn.innerText = '⏸';
+        } else {
+          bgMusic.pause();
+          audioBtn.innerText = '♫';
+        }
+      };
+      document.body.addEventListener('click', function autoPlay() {
+        bgMusic.play().then(() => {
+          audioBtn.innerText = '⏸';
+          playFlag = true;
+        }).catch(() => {});
+        document.body.removeEventListener('click', autoPlay, { once: true });
+      });
+    })();
+  </script>
+</body>
+</html>

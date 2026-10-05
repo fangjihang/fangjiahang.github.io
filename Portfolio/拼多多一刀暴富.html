@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🎰 拼夕夕·砍一刀转盘｜先甜后苦版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #FF6034 0%, #EE4D2D 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255,255,255,0.98);
+            border-radius: 40px;
+            padding: 20px 25px 30px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        h1 {
+            color: #FF6034;
+            margin-bottom: 12px;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: 2px;
+        }
+        .balance {
+            background: linear-gradient(135deg, #FFE5B4 0%, #FFD966 100%);
+            color: #C23B22;
+            padding: 12px 16px;
+            border-radius: 60px;
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: inline-block;
+            width: 100%;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,200,0.8);
+        }
+        .balance span {
+            background: white;
+            padding: 4px 14px;
+            border-radius: 40px;
+            margin-left: 10px;
+            color: #FF4500;
+        }
+        .wheel-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+            margin: 15px auto 10px;
+            aspect-ratio: 1 / 1;
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.6);
+        }
+        /* 精美指针：箭头+星星 绝对居中 */
+        .pointer-container {
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+        }
+        .arrow-triangle {
+            width: 0;
+            height: 0;
+            border-left: 24px solid transparent;
+            border-right: 24px solid transparent;
+            border-top: 46px solid #FFD966;
+            position: relative;
+            top: 0;
+        }
+        .arrow-triangle::after {
+            content: "";
+            position: absolute;
+            top: -48px;
+            left: -20px;
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #FFB347;
+            opacity: 0.4;
+            z-index: -1;
+        }
+        .star-icon {
+            position: absolute;
+            top: -42px;
+            left: 50%;
+            transform: translateX(-50%) rotate(12deg);
+            font-size: 34px;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+            z-index: 25;
+            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .result {
+            background: #FFF3ED;
+            padding: 14px;
+            border-radius: 60px;
+            margin: 20px 0 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #D94A1F;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.05);
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(120deg, #FFD966, #FFB347);
+            color: #B33B12;
+            border: none;
+            border-radius: 60px;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 5px 0 #B8602A;
+            font-family: inherit;
+        }
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #B8602A;
+        }
+        button:disabled {
+            opacity: 0.6;
+            transform: translateY(0);
+            cursor: not-allowed;
+            filter: grayscale(0.05);
+        }
+        .withdraw-btn {
+            background: linear-gradient(120deg, #FF6034, #DC4C1F);
+            color: white;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 0 #982C0C;
+        }
+        .stats {
+            background: #F0E2D8;
+            padding: 10px;
+            border-radius: 30px;
+            color: #AD4A2A;
+            font-weight: bold;
+            margin-top: 15px;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .stats span {
+            background: white;
+            padding: 2px 14px;
+            border-radius: 30px;
+            margin-left: 8px;
+            color: #E6551F;
+        }
+        @keyframes spark {
+            0% { text-shadow: 0 0 0 gold; }
+            100% { text-shadow: 0 0 10px orange; }
+        }
+        .result-highlight {
+            animation: spark 0.5s ease-in-out 2;
+        }
+        footer {
+            font-size: 12px;
+            color: #BC8F6B;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎡 拼夕夕·一刀暴富 🎲</h1>
+    <div class="balance">
+        💰 余额 <span id="balance">0.00</span> 元
+    </div>
+
+    <div class="wheel-wrapper">
+        <div class="pointer-container">
+            <div class="arrow-triangle"></div>
+            <div class="star-icon">⭐</div>
+        </div>
+        <canvas id="wheelCanvas" width="500" height="500"></canvas>
+    </div>
+
+    <div class="result" id="resultMsg">
+        ✨ 首抽即送大额红包！越往后越“惊喜” ✨
+    </div>
+
+    <button id="spinBtn" onclick="startSpin()">🎰 立即抽奖 🎰</button>
+    <button class="withdraw-btn" onclick="handleWithdraw()">💰 提现 (满100元)</button>
+
+    <div class="stats">
+        <div>🎲 抽奖次数: <span id="spinCount">0</span></div>
+        <div>🏆 距离提现: <span id="distanceTo100">100.00</span> 元</div>
+    </div>
+    <footer>※ 指针所指金额=实际获得 | 前期暴利, 后期0.001精度收割</footer>
+</div>
+
+<script>
+    (function(){
+        // ---------- 极致真实的“先大后小”拼夕夕逻辑 ----------
+        // 第一阶段 (余额<50) : 大奖频出 50~90元直接出现，基本2~3次就能接近满额
+        // 第二阶段 (余额 50~85) : 中等奖励为主 0.5~5元之间
+        // 第三阶段 (余额 85~98) : 极小金额 0.01~0.5元
+        // 第四阶段 (余额 >=98) : 几乎只有0.001~0.05元 且出现概率极高，永远无法达到100（完美还原）
+        // 同时转盘奖品视觉8个扇区动态变化，但最终金额完全由算法控制保证真实
+        
+        // 奖品视觉扇区 (只用于展示不同颜色/金额范围大致，实际奖金由规则动态决定，但指针指向会精准对应结算金额)
+        const VISUAL_SEGMENTS = [
+            { id: 0, label: "🔥 暴富专区", color: "#FF6B4A",  rangeShow: "50~90元" },
+            { id: 1, label: "⭐ 鸿运当头", color: "#F9A26C",  rangeShow: "0.5~8元" },
+            { id: 2, label: "💰 惊喜红包", color: "#6CC9B0",  rangeShow: "1~20元" },
+            { id: 3, label: "🍀 小确幸",   color: "#85C1E9",  rangeShow: "0.01~1元" },
+            { id: 4, label: "🎁 欧皇附体", color: "#F5B041",  rangeShow: "30~88元" },
+            { id: 5, label: "✨ 幸运星",   color: "#A2D9CE",  rangeShow: "0.1~2元" },
+            { id: 6, label: "💎 钻石大奖", color: "#E67E22",  rangeShow: "60~99元" },
+            { id: 7, label: "🌸 安慰红包", color: "#FAD7A1",  rangeShow: "0.001~0.5元" }
+        ];
+        const SEG_COUNT = VISUAL_SEGMENTS.length;
+
+        // 真实核心抽奖算法: 根据当前余额返回【获得金额】以及【希望展示指向哪个扇区】(让指针停在对应视觉区)
+        // 返回 { amount: 实际金额, visualSegmentIndex: 指向的扇区索引(0-7) }
+        function getRealPrizeByBalance(currentBal) {
+            let amount = 0;
+            let targetVisualIdx = 0;
+            
+            // 第一阶段: 余额 < 50 元  狂送大额，直奔90以上
+            if (currentBal < 50) {
+                // 暴利阶段: 大概率获得 30~88元，甚至直接给到98逼近提现
+                let r = Math.random();
+                if (r < 0.55) {        // 55% 超大额 50~92元
+                    amount = 50 + Math.random() * 42;   // 50~92
+                    amount = Math.min(amount, 98.5 - currentBal); // 不超过98.5防止瞬间超100太多，但允许很接近
+                    if (amount < 8) amount = 8 + Math.random() * 30;
+                    targetVisualIdx = [0, 4, 6][Math.floor(Math.random() * 3)]; // 暴富区/欧皇/钻石大奖
+                } else if (r < 0.85) {   // 30% 中等偏上 8~30元
+                    amount = 8 + Math.random() * 22;
+                    targetVisualIdx = [1, 2, 4][Math.floor(Math.random() * 3)];
+                } else {                 // 15% 小额过渡 0.5~5元
+                    amount = 0.5 + Math.random() * 4.5;
+                    targetVisualIdx = [3,5,7][Math.floor(Math.random() * 3)];
+                }
+                // 极端情况下如果金额超出限制则调节
+                let maxAllowed = 99.99 - currentBal;
+                if (maxAllowed < 0.01) amount = 0.001;
+                else if (amount > maxAllowed) amount = Math.max(0.01, maxAllowed);
+                amount = parseFloat(amount.toFixed(3));
+                if (amount < 0.001) amount = 0.001;
+                return { amount, visualSegmentIndex: targetVisualIdx };
+            } 
+            // 第二阶段: 余额 50~85 元 中小额为主，偶尔中额
+            else if (currentBal < 85) {
+                let r = Math.random();
+                if (r < 0.15) {        // 15% 中奖 2~12元
+                    amount = 2 + Math.random() * 10;
+                    targetVisualIdx = [2, 4][Math.floor(Math.random() * 2)];
+                } else if (r < 0.6) {   // 45% 微小金额 0.1~1.2元
+                    amount = 0.1 + Math.random() * 1.1;
+                    targetVisualIdx = [3,5,7][Math.floor(Math.random() * 3)];
+                } else {                // 40% 极微 0.01~0.5元
+                    amount = 0.01 + Math.random() * 0.49;
+                    targetVisualIdx = [3,7][Math.floor(Math.random() * 2)];
+                }
+                let maxAllowed = 99.99 - currentBal;
+                if (maxAllowed < 0.005) amount = 0.001;
+                else if (amount > maxAllowed) amount = Math.max(0.005, maxAllowed);
+                amount = parseFloat(amount.toFixed(3));
+                if (amount < 0.001) amount = 0.001;
+                return { amount, visualSegmentIndex: targetVisualIdx };
+            }
+            // 第三阶段: 余额 85~98 元  几乎只有0.001~0.5元，超大额概率降至0
+            else if (currentBal < 98) {
+                let r = Math.random();
+                if (r < 0.05) {        // 5% 象征性给0.5~1.5元 (极少)
+                    amount = 0.5 + Math.random() * 1.0;
+                    targetVisualIdx = 2;
+                } else if (r < 0.4) {   // 35% 0.05~0.3元
+                    amount = 0.05 + Math.random() * 0.25;
+                    targetVisualIdx = 3;
+                } else {                // 60% 0.001~0.05元 (核心磨人)
+                    amount = 0.001 + Math.random() * 0.049;
+                    targetVisualIdx = 7;
+                }
+                let maxAllowed = 99.99 - currentBal;
+                if (maxAllowed <= 0.0005) amount = 0.0005;
+                else if (amount > maxAllowed) amount = Math.max(0.0005, maxAllowed);
+                amount = parseFloat(amount.toFixed(4));
+                if (amount < 0.0005) amount = 0.0005;
+                return { amount, visualSegmentIndex: targetVisualIdx };
+            }
+            // 第四阶段: 余额 >=98 且 <100  只有 0.0005~0.03 元，永远吊胃口
+            else {
+                // 永远抽到比 100-余额 还小的金额，让你永远差一刀
+                let gap = 100 - currentBal;
+                // 确保获取金额不超过 gap 的 70% 而且最多 0.02元
+                let maxPossible = Math.min(gap * 0.68, 0.025);
+                if (maxPossible < 0.0005) maxPossible = 0.0005;
+                amount = 0.0005 + Math.random() * (maxPossible - 0.0005);
+                amount = Math.min(amount, gap - 0.0001);
+                amount = parseFloat(amount.toFixed(5));
+                if (amount <= 0) amount = 0.0005;
+                // 指向“安慰红包”扇区
+                targetVisualIdx = 7;
+                return { amount, visualSegmentIndex: targetVisualIdx };
+            }
+        }
+
+        // ----------------- 全局变量 ----------------
+        let balance = 0.00;
+        let spinTotal = 0;
+        let isSpinning = false;
+        let animationFrameId = null;
+        let currentRotation = 0;
+        let canvas = document.getElementById('wheelCanvas');
+        let ctx = canvas.getContext('2d');
+        let width, height, centerX, centerY, radius;
+
+        // 绘制转盘 (基于视觉扇区)
+        function drawWheel(rotationRad = 0) {
+            if (!ctx) return;
+            const angleStep = (Math.PI * 2) / SEG_COUNT;
+            ctx.clearRect(0, 0, width, height);
+            for (let i = 0; i < SEG_COUNT; i++) {
+                const start = i * angleStep + rotationRad;
+                const end = start + angleStep;
+                const seg = VISUAL_SEGMENTS[i];
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, start, end);
+                ctx.closePath();
+                ctx.fillStyle = seg.color;
+                ctx.fill();
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(start + angleStep / 2);
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                const textRadius = radius * 0.7;
+                ctx.font = `bold ${Math.max(11, Math.floor(radius * 0.08))}px "Segoe UI", "Microsoft YaHei"`;
+                ctx.fillStyle = "#ffffff";
+                ctx.shadowBlur = 0;
+                let shortLabel = seg.label.length > 6 ? seg.label.slice(0,4) : seg.label;
+                ctx.fillText(shortLabel, textRadius, -8);
+                ctx.font = `bold ${Math.max(12, Math.floor(radius * 0.07))}px "Segoe UI"`;
+                ctx.fillText(seg.rangeShow, textRadius, 16);
+                ctx.restore();
+            }
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.22, 0, Math.PI * 2);
+            ctx.fillStyle = "#FFE0B5";
+            ctx.shadowBlur = 6;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.16, 0, Math.PI * 2);
+            ctx.fillStyle = "#FF884D";
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.font = `bold ${Math.floor(radius * 0.13)}px "Arial"`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🎲", centerX, centerY+2);
+            ctx.shadowBlur = 0;
+        }
+
+        // 获取指针指向的扇区索引 (指针方向固定 -PI/2)
+        function getCurrentSegmentIndex(rotationRad) {
+            const pointerAngle = -Math.PI / 2;
+            const angleStep = (Math.PI * 2) / SEG_COUNT;
+            let normPointer = (pointerAngle + 2 * Math.PI) % (2 * Math.PI);
+            for (let i = 0; i < SEG_COUNT; i++) {
+                let start = (i * angleStep + rotationRad) % (2 * Math.PI);
+                let end = ((i + 1) * angleStep + rotationRad) % (2 * Math.PI);
+                if (start < end) {
+                    if (normPointer >= start && normPointer < end) return i;
+                } else {
+                    if (normPointer >= start || normPointer < end) return i;
+                }
+            }
+            return 0;
+        }
+
+        // 动画转盘，使指针最终落在 targetVisualIndex 对应的扇区中央
+        function animateToSegment(targetVisualIndex, winAmount, callback) {
+            if (isSpinning) return;
+            isSpinning = true;
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = true;
+
+            const angleStep = (Math.PI * 2) / SEG_COUNT;
+            const pointerAngle = -Math.PI / 2;
+            // 目标扇区中心弧度
+            let targetSectorMid = targetVisualIndex * angleStep + (angleStep / 2);
+            let rawNeeded = pointerAngle - targetSectorMid;
+            let finalRotationNeeded = ((rawNeeded % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            const extraRounds = 7 + Math.floor(Math.random() * 5);
+            const targetRotation = finalRotationNeeded + extraRounds * 2 * Math.PI;
+            const startRotation = currentRotation;
+            const duration = 2600;
+            const startTime = performance.now();
+
+            function animateSpin(now) {
+                const elapsed = now - startTime;
+                let t = Math.min(1, elapsed / duration);
+                const easeOut = 1 - Math.pow(1 - t, 3);
+                const newRotation = startRotation + (targetRotation - startRotation) * easeOut;
+                currentRotation = newRotation % (2 * Math.PI);
+                drawWheel(currentRotation);
+                if (t < 1) {
+                    animationFrameId = requestAnimationFrame(animateSpin);
+                } else {
+                    let finalMod = targetRotation % (2 * Math.PI);
+                    currentRotation = finalMod;
+                    drawWheel(currentRotation);
+                    // 最终确认落点位置，由于浮点误差微调
+                    let finalIdx = getCurrentSegmentIndex(currentRotation);
+                    if (finalIdx !== targetVisualIndex) {
+                        let correction = 0.0;
+                        let diff = (targetVisualIndex - finalIdx + SEG_COUNT) % SEG_COUNT;
+                        if (diff === 1) correction = -0.025;
+                        else if (diff === SEG_COUNT-1) correction = 0.025;
+                        if (correction !== 0) {
+                            currentRotation = (currentRotation + correction) % (2 * Math.PI);
+                            drawWheel(currentRotation);
+                        }
+                    }
+                    // 结算奖励
+                    finishPrize(winAmount);
+                    isSpinning = false;
+                    spinBtn.disabled = false;
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                    if (callback) callback();
+                }
+            }
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(animateSpin);
+        }
+
+        function finishPrize(winAmount) {
+            let oldBalance = balance;
+            balance += winAmount;
+            // 保留足够精度展示，最多小数点后4位
+            balance = parseFloat(balance.toFixed(5));
+            if (balance > 99.9999) balance = 99.9999;
+            spinTotal++;
+            document.getElementById('balance').innerText = balance.toFixed(4);
+            document.getElementById('spinCount').innerText = spinTotal;
+            let remain = (100 - balance).toFixed(5);
+            if (parseFloat(remain) < 0) remain = "0.00000";
+            document.getElementById('distanceTo100').innerText = remain;
+            
+            const resultDiv = document.getElementById('resultMsg');
+            let winShow = winAmount.toFixed(5);
+            if (winAmount < 0.001) winShow = winAmount.toFixed(5) + "元";
+            else if (winAmount < 0.01) winShow = winAmount.toFixed(4) + "元";
+            else winShow = winAmount.toFixed(2) + "元";
+            
+            if (balance >= 99.9 && balance < 100) {
+                resultDiv.innerHTML = `😱 获得 ${winShow}！还差 ${(100-balance).toFixed(5)} 元提现，继续努力... 🔪`;
+            } else if (balance >= 100) {
+                resultDiv.innerHTML = `🎉🎉🎉 奇迹！获得 ${winShow} ！累计满100元，速速提现！ 🎉🎉🎉`;
+                resultDiv.classList.add('result-highlight');
+                setTimeout(() => resultDiv.classList.remove('result-highlight'), 1200);
+            } else if (winAmount > 10) {
+                resultDiv.innerHTML = `💥💥💥 天降暴富！+${winShow} ！余额 ${balance.toFixed(4)} 元 💥💥💥`;
+            } else {
+                resultDiv.innerHTML = `🎲 获得 ${winShow} ，当前余额 ${balance.toFixed(4)} 元，再抽一刀！`;
+            }
+        }
+
+        // 抽奖入口 (完全遵循先大后小逻辑)
+        window.startSpin = function() {
+            if (isSpinning) {
+                document.getElementById('resultMsg').innerHTML = "⏳ 转盘旋转中，请稍后...";
+                return;
+            }
+            if (balance >= 100) {
+                document.getElementById('resultMsg').innerHTML = "🏆 已满100元，请提现后继续！";
+                return;
+            }
+            // 根据当前余额获取真实奖品
+            let prize = getRealPrizeByBalance(balance);
+            let targetVisual = prize.visualSegmentIndex;
+            let winAmount = prize.amount;
+            
+            // 终极保险: 确保加上后不会超过100元 (维持拼夕夕永远差一刀特性)
+            let tempSum = balance + winAmount;
+            if (tempSum >= 100) {
+                let limit = parseFloat((100 - balance).toFixed(6));
+                if (limit <= 0.00001) {
+                    winAmount = 0.0001;
+                } else {
+                    winAmount = Math.min(winAmount, limit * 0.99);
+                    if (winAmount <= 0.00001) winAmount = 0.0001;
+                }
+                winAmount = parseFloat(winAmount.toFixed(6));
+            }
+            if (winAmount <= 0) winAmount = 0.0001;
+            
+            // 启动动画指向对应视觉区并结算
+            animateToSegment(targetVisual, winAmount);
+        };
+
+        // 提现
+        window.handleWithdraw = function() {
+            if (balance >= 100) {
+                document.getElementById('resultMsg').innerHTML = `✅ 提现成功！ ${balance.toFixed(2)} 元已到账，开始新一轮收割 ✅`;
+                balance = 0;
+                document.getElementById('balance').innerText = "0.0000";
+                document.getElementById('distanceTo100').innerText = "100.00";
+                drawWheel(currentRotation);
+            } else {
+                let shortage = (100 - balance).toFixed(5);
+                document.getElementById('resultMsg').innerHTML = `😭 还差 ${shortage} 元才能提现，继续抽奖（大概率0.001） 💔`;
+            }
+        };
+
+        function resizeAndDraw() {
+            const container = canvas.parentElement;
+            const size = container.clientWidth;
+            canvas.width = size;
+            canvas.height = size;
+            width = canvas.width;
+            height = canvas.height;
+            centerX = width / 2;
+            centerY = height / 2;
+            radius = width * 0.44;
+            drawWheel(currentRotation);
+        }
+
+        function init() {
+            resizeAndDraw();
+            window.addEventListener('resize', () => resizeAndDraw());
+            drawWheel(0);
+        }
+        init();
+    })();
+</script>
+</body>
+</html>

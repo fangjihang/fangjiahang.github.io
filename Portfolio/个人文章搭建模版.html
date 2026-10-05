@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>博客文章速写器</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+:root {
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --border: #e8e6e1;
+  --text: #1c1c1c;
+  --text-secondary: #6b6b6b;
+  --text-tertiary: #9e9e9e;
+  --accent: #1a1a1a;
+  --link: #1a56db;
+  --link-hover: #1040b0;
+  --tag-bg: #f3f3f0;
+  --tag-text: #555;
+  --code-bg: #f5f5f2;
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
+  --radius: 6px;
+  --radius-lg: 10px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Consolas", "Monaco", monospace;
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "STSong", "Songti SC", "SimSun", Georgia, "Times New Roman", serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.header-left { display:flex; align-items:center; gap:14px; }
+.header-logo {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.header-title { font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.2px; }
+.header-nav {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text-secondary);
+}
+.header-nav a {
+  color: var(--text-secondary); cursor: pointer;
+  text-decoration: none; transition: color 0.15s;
+}
+.header-nav a:hover { color: var(--text); }
+.header-nav .sep { color: #ccc; margin: 0 4px; user-select: none; }
+.header-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+/* ── Buttons ── */
+.btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:8px 16px; border-radius:20px; border:1px solid var(--border);
+  background:var(--surface); color:var(--text); cursor:pointer;
+  font-size:13px; font-weight:500; font-family:var(--font-sans);
+  white-space:nowrap; transition:all 0.18s;
+  letter-spacing: -0.1px;
+}
+.btn:hover { background:#f5f5f2; border-color:#d5d3ce; }
+.btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+.btn-primary:hover { background:#333; border-color:#333; }
+.btn-outline { background:transparent; border-color:var(--border); }
+.btn-outline:hover { background:#f5f5f2; }
+.btn-sm { padding:5px 12px; font-size:12px; }
+.btn-xs { padding:3px 9px; font-size:11px; }
+.btn-icon {
+  padding:7px 9px; min-width:34px; justify-content:center;
+  border-radius:var(--radius); font-size:14px;
+}
+
+/* ── Gallery ── */
+.gallery-hero {
+  text-align: center;
+  padding: 80px 24px 48px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.gallery-hero h1 {
+  font-size: 36px; font-weight: 700;
+  letter-spacing: -0.5px; margin-bottom: 12px;
+  color: var(--text);
+}
+.gallery-hero p {
+  font-size: 17px; color: var(--text-secondary);
+  line-height: 1.7; margin-bottom: 28px;
+}
+.gallery-hero .btn {
+  font-size: 14px; padding: 10px 24px;
+}
+
+.gallery-container {
+  max-width: 1080px; margin: 0 auto; padding: 0 32px 80px;
+}
+.gallery-section-title {
+  font-size: 13px; font-weight: 600; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 18px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 26px 22px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+  transform-origin: left;
+}
+.card:hover { border-color:#ccc; box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.card:hover::before { transform: scaleX(1); }
+
+.card-meta { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.card-type-icon { display:inline-block; margin-right: 4px; }
+.card h3 { font-size: 18px; font-weight: 700; line-height: 1.45; margin-bottom: 8px; letter-spacing: -0.2px; }
+.card-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; flex:1; margin-bottom: 18px; }
+.card-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--text-tertiary);
+  border-top: 1px solid #f3f3f0; padding-top: 14px;
+}
+.card-bottom .hint { color: var(--link); font-weight: 500; opacity:0; transition:opacity 0.2s; }
+.card:hover .card-bottom .hint { opacity:1; }
+
+/* ── Editor Layout ── */
+.editor-wrapper {
+  max-width: 1400px; margin: 0 auto; padding: 24px 32px;
+  height: calc(100vh - 72px);
+  display: flex; flex-direction: column; gap: 0;
+}
+
+.editor-toolbar {
+  display: flex; align-items: center; gap: 2px;
+  padding: 8px 4px; margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.editor-toolbar .btn-icon { border:1px solid transparent; }
+.editor-toolbar .btn-icon:hover { background:#f3f3f0; border-color:var(--border); }
+.editor-toolbar .divider { width:1px; height:20px; background:var(--border); margin:0 6px; }
+
+.editor-main { display:flex; gap:20px; flex:1; min-height:0; }
+
+.editor-panel {
+  flex:1; min-width:0;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-xs);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+
+/* ── Title & tags header ── */
+.editor-panel-header {
+  padding: 20px 28px 0;
+  border-bottom: 1px solid #f3f3f0;
+}
+#titleInput {
+  width:100%; border:none; outline:none;
+  font-size: 28px; font-weight: 700; font-family: var(--font-sans);
+  padding: 4px 0; color: var(--text); background: transparent;
+  letter-spacing: -0.4px;
+}
+#titleInput::placeholder { color: #ccc; }
+.editor-meta-row {
+  display: flex; align-items: center; gap: 10px;
+  margin: 12px 0 14px; flex-wrap: wrap;
+}
+.editor-meta-label { font-size: 12px; color: var(--text-tertiary); font-weight: 500; white-space:nowrap; }
+
+.tag-chip {
+  display:inline-flex; align-items:center; gap:3px;
+  padding:4px 12px; background:var(--tag-bg); border-radius:20px;
+  font-size:12px; color:var(--tag-text); font-weight:500;
+}
+.tag-chip .tag-x { cursor:pointer; font-size:15px; line-height:1; color:#aaa; margin-left:2px; }
+.tag-chip .tag-x:hover { color:var(--text); }
+#tagInputInline {
+  border:none; outline:none; font-size:12px; padding:4px 6px; min-width:90px;
+  background:transparent; font-family:var(--font-sans); color:var(--text);
+}
+#tagInputInline::placeholder { color:#ccc; }
+
+/* ── Textarea ── */
+.editor-body { flex:1; display:flex; flex-direction:column; position:relative; min-height:0; }
+.editor-body textarea {
+  flex:1; width:100%; border:none; outline:none; resize:none;
+  font-size: 15px; line-height: 1.85; color: var(--text);
+  background: transparent;
+  font-family: var(--font-mono);
+  padding: 24px 28px;
+}
+.editor-body textarea::placeholder { color: #d0d0d0; }
+
+.editor-footer {
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:10px 20px; border-top:1px solid #f3f3f0; flex-shrink:0; flex-wrap:wrap;
+}
+.footer-stats { display:flex; gap:18px; font-size:11px; color:var(--text-tertiary); }
+.footer-stats strong { color:var(--text); font-weight:600; }
+.footer-save { font-size:11px; color:#4caf50; display:flex; align-items:center; gap:4px; opacity:0; transition:opacity 0.4s; }
+.footer-save.visible { opacity:1; }
+
+/* ── Preview ── */
+.preview-body { flex:1; overflow-y:auto; padding: 28px 36px 36px; }
+.preview-content {
+  font-family: var(--font-serif);
+  font-size: 16px; line-height: 1.95; color: #242424;
+  max-width: 680px;
+}
+.preview-content h1 {
+  font-family: var(--font-sans); font-size: 30px; font-weight: 800;
+  margin: 0 0 24px; letter-spacing: -0.4px; line-height: 1.3;
+}
+.preview-content h2 {
+  font-family: var(--font-sans); font-size: 21px; font-weight: 700;
+  margin: 42px 0 14px; padding-bottom: 10px;
+  border-bottom: 1px solid #ebeae6; letter-spacing: -0.2px;
+}
+.preview-content h3 {
+  font-family: var(--font-sans); font-size: 17px; font-weight: 700;
+  margin: 30px 0 10px; color: #111;
+}
+.preview-content p { margin: 14px 0; }
+.preview-content ul, .preview-content ol { padding-left: 26px; margin: 12px 0; }
+.preview-content li { margin: 6px 0; }
+.preview-content strong { color: #000; }
+.preview-content a { color:var(--link); text-decoration:none; border-bottom:1px solid #c8d6f0; }
+.preview-content a:hover { border-bottom-color:var(--link); }
+.preview-content code {
+  font-family: var(--font-mono); background: var(--code-bg);
+  padding: 2px 6px; border-radius: 3px; font-size: 0.88em; color: #c7254e;
+}
+.preview-content pre {
+  background: #1a1a1e; color: #e0e0e0;
+  padding: 20px 24px; border-radius: var(--radius-lg);
+  overflow-x: auto; margin: 18px 0; font-size: 13px; line-height: 1.7;
+  font-family: var(--font-mono);
+}
+.preview-content pre code { background:none; padding:0; color:inherit; font-size:inherit; }
+.preview-content blockquote {
+  border-left: 3px solid #d5d3ce; margin: 20px 0;
+  padding: 8px 20px; color: #555; font-style: italic;
+}
+.preview-content img { max-width:100%; border-radius:var(--radius-sm); margin:12px 0; }
+.preview-content table { border-collapse:collapse; width:100%; margin:18px 0; font-size:14px; }
+.preview-content th, .preview-content td {
+  border:1px solid #e8e6e1; padding:10px 14px; text-align:left;
+}
+.preview-content th { background:#fafaf7; font-weight:600; }
+.preview-content hr { border:none; border-top:1px solid #e8e6e1; margin:36px 0; }
+
+.preview-empty {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content: center; height:100%;
+  color: #d5d3ce; text-align:center; padding:60px 40px;
+}
+.preview-empty .icon { font-size: 48px; margin-bottom: 12px; opacity:0.5; }
+.preview-empty p { font-family:var(--font-sans); font-size:15px; }
+
+/* ── Outline ── */
+.outline-panel {
+  width: 200px; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-xs);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.outline-panel-header {
+  padding: 14px 16px; border-bottom: 1px solid #f3f3f0;
+  font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.6px;
+}
+.outline-panel-body { flex:1; overflow-y:auto; padding:8px; }
+.outline-item {
+  display: block; padding: 6px 12px; font-size: 12px;
+  color: var(--text-secondary); cursor: pointer;
+  border-radius: var(--radius-sm); text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: all 0.12s; border-left: 2px solid transparent;
+  font-family: var(--font-sans);
+}
+.outline-item:hover { background:#f5f5f2; color:var(--text); }
+.outline-item.l2 { font-weight: 600; }
+.outline-item.l3 { padding-left: 24px; font-size: 11px; }
+.outline-item.active { border-left-color: var(--accent); color: var(--text); background: #f5f5f2; }
+.outline-empty { font-size:12px; color:#ccc; text-align:center; padding:24px 12px; }
+
+/* ── Toast ── */
+.toast {
+  position:fixed; bottom:40px; left:50%; transform:translateX(-50%);
+  background: #1c1c1c; color:#fff; padding:10px 22px;
+  border-radius: 20px; font-size:13px; font-family:var(--font-sans);
+  opacity:0; pointer-events:none; transition:opacity 0.3s;
+  z-index:999; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.toast.show { opacity:1; }
+
+/* ── Focus mode ── */
+body.focus .outline-panel,
+body.focus .preview-panel { opacity:0.12; transition:opacity 0.3s; pointer-events:none; }
+body.focus .editor-toolbar { opacity:0.2; transition:opacity 0.3s; }
+body.focus .header { opacity:0.2; transition:opacity 0.3s; }
+body.focus .outline-panel:hover,
+body.focus .preview-panel:hover,
+body.focus .editor-toolbar:hover,
+body.focus .header:hover { opacity:1; pointer-events:auto; }
+
+/* ── Responsive ── */
+@media (max-width:1100px) { .outline-panel { display:none; } }
+@media (max-width:768px) {
+  .header { padding:10px 14px; }
+  .gallery-hero { padding:40px 16px 24px; }
+  .gallery-hero h1 { font-size:28px; }
+  .gallery-container { padding: 0 16px 48px; }
+  .grid { grid-template-columns:1fr; gap:12px; }
+  .card { padding:22px 20px 18px; }
+  .editor-wrapper { padding:12px; height:auto; }
+  .editor-main { flex-direction:column; }
+  .editor-panel { min-height:400px; }
+  .editor-panel-header { padding:14px 16px 0; }
+  #titleInput { font-size:22px; }
+  .editor-body textarea { padding:16px; font-size:14px; }
+  .preview-body { padding:18px; }
+  .editor-toolbar { gap:1px; }
+  .editor-toolbar .btn-icon { padding:5px 7px; min-width:28px; font-size:13px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="header">
+  <div class="header-left">
+    <div class="header-logo">B</div>
+    <span class="header-title">博客速写</span>
+    <span class="header-nav" id="headerNav">
+      <a onclick="showGallery()">模板</a>
+      <span class="sep" id="navSep" style="display:none;">/</span>
+      <span id="navCur" style="color:var(--text-tertiary);"></span>
+    </span>
+  </div>
+  <div class="header-actions" id="headerActions"></div>
+</header>
+
+<!-- ── Gallery ── -->
+<div id="galleryView">
+  <div class="gallery-hero">
+    <h1>选一个模板，开始写作</h1>
+    <p>六篇完整的范文，覆盖技术教程、问题排查、观点思考、工具推荐、项目复盘和读书笔记。选一篇加载到编辑器，在它的基础上修改。</p>
+    <button class="btn btn-primary" onclick="startBlank()">从空白开始</button>
+  </div>
+  <div class="gallery-container">
+    <div class="gallery-section-title">全部模板</div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<!-- ── Editor ── -->
+<div id="editorView">
+  <div class="editor-wrapper">
+    <!-- Formatting toolbar -->
+    <div class="editor-toolbar">
+      <button class="btn btn-icon btn-sm" onclick="insertMD('**','**','粗体')" title="粗体 Ctrl+B"><b style="font-size:14px;">B</b></button>
+      <button class="btn btn-icon btn-sm" onclick="insertMD('*','*','斜体')" title="斜体 Ctrl+I"><i style="font-size:14px;">I</i></button>
+      <button class="btn btn-icon btn-sm" onclick="insertMD('`','`','')" title="行内代码 Ctrl+`" style="font-family:var(--font-mono);font-size:12px;">&lt;/&gt;</button>
+      <span class="divider"></span>
+      <button class="btn btn-icon btn-sm" onclick="insertHeading(2)" title="二级标题" style="font-weight:700;">H2</button>
+      <button class="btn btn-icon btn-sm" onclick="insertHeading(3)" title="三级标题" style="font-weight:700;font-size:12px;">H3</button>
+      <span class="divider"></span>
+      <button class="btn btn-icon btn-sm" onclick="insertMD('[','](url)','')" title="链接 Ctrl+K">🔗</button>
+      <button class="btn btn-icon btn-sm" onclick="insertList('- ')" title="无序列表">•</button>
+      <button class="btn btn-icon btn-sm" onclick="insertList('1. ')" title="有序列表">1.</button>
+      <button class="btn btn-icon btn-sm" onclick="insertMD('> ','','')" title="引用">❝</button>
+      <button class="btn btn-icon btn-sm" onclick="insertBlock('code')" title="代码块">{ }</button>
+      <button class="btn btn-icon btn-sm" onclick="insertBlock('table')" title="表格">⊞</button>
+      <span class="divider"></span>
+      <button class="btn btn-icon btn-sm" onclick="insertMD('---','','')" title="分割线">—</button>
+      <span style="flex:1;"></span>
+      <button class="btn btn-outline btn-sm" id="btnFocus" onclick="toggleFocus()">专注</button>
+    </div>
+
+    <div class="editor-main">
+      <!-- Editor -->
+      <div class="editor-panel" style="flex:1.15;">
+        <div class="editor-panel-header">
+          <input type="text" id="titleInput" placeholder="文章标题" oninput="onEditorChange()">
+          <div class="editor-meta-row">
+            <span class="editor-meta-label">标签</span>
+            <span id="tagChips" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+              <input type="text" id="tagInputInline" placeholder="回车添加标签…" onkeydown="handleTagKey(event)" onblur="commitTag()">
+            </span>
+          </div>
+        </div>
+        <div class="editor-body">
+          <textarea id="editor" placeholder="开始写……" oninput="onEditorChange()" onkeydown="handleTab(event)" onscroll="syncOutline()"></textarea>
+        </div>
+        <div class="editor-footer">
+          <div class="footer-stats">
+            <span>字数 <strong id="wordCount">0</strong></span>
+            <span>段落 <strong id="paraCount">0</strong></span>
+            <span>阅读约 <strong id="readTime">0</strong> 分钟</span>
+          </div>
+          <div class="footer-save" id="saveInd">✓ 已保存</div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="editor-panel preview-panel" style="flex:1.25;">
+        <div class="preview-body preview-content" id="preview">
+          <div class="preview-empty">
+            <span class="icon">¶</span>
+            <p>左侧书写，此处实时预览</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outline -->
+      <div class="outline-panel">
+        <div class="outline-panel-header">大纲</div>
+        <div class="outline-panel-body" id="outlineBody">
+          <div class="outline-empty">标题会出现在这里</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ═══════════════════ TEMPLATES ═══════════════════
+const TEMPLATES = [
+  {
+    id:'python-automation', type:'Python 应用', icon:'⚡',
+    title:'Python 能帮你自动做什么？6 个让生活更轻松的实用脚本',
+    desc:'不用学完整个 Python 课程就能用。6 个真实可跑的脚本——批量改文件名、自动发邮件、定期备份文件、整理桌面。复制粘贴，改几行就能用。',
+    tags:'Python, 自动化, 脚本, 入门, 实用', words:2600, readMin:8,
+    content:'## 前言\n\n很多人学 Python 的最大困惑是：学完了基础语法，但不知道能拿来干什么。\n\n这篇文章不教语法，直接给你 **6 个能立刻用上的 Python 脚本**。每个脚本解决一个真实的生活/工作场景，代码不长，复制下来改几行就能跑。\n\n> 运行这些脚本只需要电脑上装了 Python（[python.org](https://python.org) 下载安装即可）。把代码保存为 `.py` 文件，在命令行输入 `python 文件名.py` 就能执行。\n\n---\n\n## 1. 批量给文件改名\n\n**场景**：下载了一堆照片，名字全都是 `IMG_001.jpg` 这种，想批量改成 `旅行-001.jpg`。\n\n```python\nimport os\n\nfolder = r"C:\\Users\\你的用户名\\Desktop\\照片"   # 改成你的文件夹路径\nnew_name = "旅行"                                # 改成你想要的前缀\n\nfiles = os.listdir(folder)\nfor i, filename in enumerate(files, start=1):\n    ext = os.path.splitext(filename)[1]          # 获取扩展名，如 .jpg\n    old_path = os.path.join(folder, filename)\n    new_path = os.path.join(folder, f"{new_name}-{i:03d}{ext}")\n    os.rename(old_path, new_path)\n    print(f"改名: {filename} → {new_name}-{i:03d}{ext}")\n\nprint("全部完成！")\n```\n\n`{i:03d}` 的意思是"把数字格式化为 3 位，不足前面补 0"——比如 1 变成 001。这样文件名排序不会乱。\n\n---\n\n## 2. 自动整理下载文件夹\n\n**场景**：下载文件夹里堆了 PDF、Word、图片、安装包……手动分类累死人。\n\n```python\nimport os\nimport shutil\n\ndownloads = r"C:\\Users\\你的用户名\\Downloads"     # 改成你的下载文件夹路径\n\n# 定义规则：扩展名 → 目标文件夹名\nrules = {\n    "图片": [".jpg", ".png", ".gif", ".bmp", ".webp"],\n    "文档": [".pdf", ".docx", ".xlsx", ".pptx", ".txt"],\n    "压缩包": [".zip", ".rar", ".7z"],\n    "安装包": [".exe", ".msi"],\n    "视频": [".mp4", ".avi", ".mkv"],\n}\n\nfor filename in os.listdir(downloads):\n    filepath = os.path.join(downloads, filename)\n    if not os.path.isfile(filepath):\n        continue\n\n    ext = os.path.splitext(filename)[1].lower()\n    for folder_name, extensions in rules.items():\n        if ext in extensions:\n            target_folder = os.path.join(downloads, folder_name)\n            os.makedirs(target_folder, exist_ok=True)    # 目标文件夹不存在就创建\n            shutil.move(filepath, os.path.join(target_folder, filename))\n            print(f"移动: {filename} → {folder_name}/")\n            break\n\nprint("整理完毕！")\n```\n\n---\n\n## 3. 把 Excel 表格拆成多个文件\n\n**场景**：一个 Excel 里有 1000 条学生信息，需要按班级拆成 10 个文件分别发给各班班主任。\n\n```python\nimport pandas as pd\n\n# 确保先安装 pandas: pip install pandas openpyxl\n\ndf = pd.read_excel("学生信息.xlsx")     # 改成你的文件路径\n\nfor class_name, group in df.groupby("班级"):\n    filename = f"{class_name}.xlsx"\n    group.to_excel(filename, index=False)\n    print(f"已生成: {filename} ({len(group)} 人)")\n\nprint("全部拆分完毕！")\n```\n\n一行 `df.groupby("班级")` 就完成了数据分组——这比手动在 Excel 里筛选、复制、另存为快无数倍。\n\n---\n\n## 4. 监控某个网页的变化\n\n**场景**：想第一时间知道某个网站发布了新内容（比如考试报名通知、促销活动）。\n\n```python\nimport requests\nimport hashlib\nimport time\n\nurl = "https://example.com/notice"       # 改成你要监控的网址\n\ndef get_page_hash(url):\n    """获取网页内容的哈希值"""\n    try:\n        response = requests.get(url, timeout=10)\n        return hashlib.md5(response.text.encode()).hexdigest()\n    except Exception as e:\n        print(f"请求失败: {e}")\n        return None\n\nprint(f"开始监控: {url}")\nlast_hash = get_page_hash(url)\n\nwhile True:\n    time.sleep(600)   # 每 10 分钟检查一次\n    current_hash = get_page_hash(url)\n    if current_hash and current_hash != last_hash:\n        print("⚠️  页面有更新！快去查看！")\n        last_hash = current_hash\n    else:\n        print(f"无变化 ({time.strftime(\'%H:%M:%S\')})")\n```\n\n原理很简单：把网页内容转成一个"指纹"（哈希值），如果指纹变了说明页面更新了。\n\n---\n\n## 5. 合并多个 PDF 文件\n\n**场景**：手上有 5 个 PDF 报告需要合并成一份完整的文档。\n\n```python\n# 先安装: pip install PyPDF2\n\nfrom PyPDF2 import PdfMerger\nimport os\n\nfolder = r"C:\\Users\\你的用户名\\Desktop\\报告"    # 改成你的文件夹\n\nmerger = PdfMerger()\npdf_files = sorted([f for f in os.listdir(folder) if f.endswith(".pdf")])\n\nfor pdf_file in pdf_files:\n    filepath = os.path.join(folder, pdf_file)\n    merger.append(filepath)\n    print(f"已添加: {pdf_file}")\n\noutput_path = os.path.join(folder, "合并后的报告.pdf")\nmerger.write(output_path)\nmerger.close()\nprint(f"✓ 合并完成！共 {len(pdf_files)} 个文件")\n```\n\n---\n\n## 6. 自动备份重要文件夹\n\n**场景**：每天下班前想把工作文件夹自动备份到移动硬盘或网盘目录。\n\n```python\nimport shutil\nimport os\nfrom datetime import datetime\n\nsource = r"C:\\Users\\你的用户名\\Documents\\工作"     # 要备份的文件夹\nbackup_base = r"D:\\备份"                           # 备份目标位置\n\ntoday = datetime.now().strftime("%Y-%m-%d")\nbackup_folder = os.path.join(backup_base, f"工作备份-{today}")\n\nprint(f"正在备份到: {backup_folder}")\nshutil.copytree(source, backup_folder)\nprint(f"✓ 备份完成！")\n```\n\n如果想只备份"有变化的文件"（增量备份），可以用 `shutil.copytree` 的 `dirs_exist_ok=True`（Python 3.8+）配合手动判断文件修改时间。\n\n---\n\n## 如何让这些脚本自动运行\n\nWindows 系统可以用"任务计划程序"让脚本每天定时执行。\n\n1. 打开"开始"菜单，搜索"任务计划程序"\n2. 点击"创建基本任务"\n3. 设置触发器为"每天"，时间为早上 9 点\n4. 操作选"启动程序"，程序填 `python`，参数填你的脚本路径\n\nmacOS 可以用 `launchd` 或者 `crontab`。\n\n---\n\n## 写在最后\n\n这些脚本都不长，但每一个都能解决一个真实的"重复劳动"。它们共同的特点是：\n\n- **不需要理解算法**——用最基础的 Python 就能写\n- **不需要学框架**——只用标准库或者安装一个第三方包\n- **改几行就能适配你的场景**——替换文件路径就行\n\nPython 最大的价值不是它有多强大，而是它让你发现：**原来这些繁琐的事情，都可以交给电脑。**\n\n> 选一个你最烦的重复劳动，试着写一个脚本替代它。哪怕花一整个下午，只要能省掉未来每周半小时的重复操作——那就是值得的。'
+  },
+  {
+    id:'python-first-week', type:'Python 入门', icon:'🚀',
+    title:'零基础学 Python 的第一周：装环境、写代码、跑起来',
+    desc:'写给完全没碰过编程的人。从"Python 是什么"开始，到装好环境、写出第一个程序、搞懂报错信息。不跳步骤，每一步都有截图级别的文字说明。',
+    tags:'Python, 入门, 环境配置, 零基础', words:2400, readMin:8,
+    content:'## 这篇文章写给谁\n\n如果你符合以下任何一个条件，这篇文章就是为你写的：\n\n- 听说过 Python 但不知道从哪开始\n- 想去网上找教程，发现第一步"装环境"就看不懂\n- 好不容易装好了 Python，打开了一个黑框框，不知道接下来该干嘛\n\n**我会用最直白的方式，带你走完从"一无所知"到"写出第一个程序"的全过程。** 不跳步骤，不预设你有任何编程经验。\n\n---\n\n## 第一步：Python 到底是什么？\n\n你可以把 Python 理解为一个**翻译官**。\n\n你写下一行人类能看懂的指令（比如 `print("hello")`），Python 帮你把它翻译成电脑能执行的机器语言，然后电脑照做。\n\n为什么叫 Python？因为创造它的人——荷兰人 Guido van Rossum——是英国喜剧团体 Monty Python 的粉丝。跟蛇没有关系。\n\nPython 的特点是：\n\n- **语法像英语** —— 比 C、Java 等语言更接近自然语言\n- **不用编译** —— 写完就能跑，不需要按什么"编译"按钮\n- **干什么都行** —— 数据分析、网站、AI、自动化脚本……Python 都有成熟的工具\n\n---\n\n## 第二步：在你的电脑上装好 Python\n\n### Windows 系统\n\n1. 打开浏览器，访问 [python.org/downloads](https://python.org/downloads)\n2. 页面会自动推荐适合你系统的最新版本（比如 Python 3.12），点击黄色的 Download 按钮\n3. 下载完成后双击安装包\n4. **重要：** 安装界面第一页，**一定要勾选底部"Add Python to PATH"**（把 Python 加到系统路径），然后点击 Install Now\n5. 等进度条跑完，安装完成\n\n### 验证是否装好了\n\n打开"命令提示符"（Win 键 → 输入 `cmd` → 回车），输入：\n\n```\npython --version\n```\n\n如果看到 `Python 3.12.x` 这样的输出，恭喜，装好了。如果提示"不是内部或外部命令"，回到上一步——大概率是没勾选"Add Python to PATH"，重新安装一次就行。\n\n### Mac 系统\n\nMac 自带 Python，但版本通常很旧。建议用 Homebrew 安装最新版：\n\n```bash\nbrew install python@3.12\n```\n\n没有 Homebrew？先去 [brew.sh](https://brew.sh) 装一个，一劳永逸。\n\n---\n\n## 第三步：写下你的第一行 Python 代码\n\n打开终端（Windows 用命令提示符或 PowerShell，Mac 用终端），输入 `python` 然后回车。你会看到：\n\n```\n>>>\n```\n\n这三个大于号是 Python 在跟你说："我准备好了，你说吧。"\n\n试试输入以下内容然后回车：\n\n```python\n>>> print("Hello，世界")\nHello，世界\n\n>>> 1 + 2\n3\n\n>>> "你好" + "Python"\n\'你好Python\'\n\n>>> 7 * 8\n56\n```\n\n**你刚刚在 Python 交互式环境里写了四行代码。** 这就是编程最基本的形态——给电脑指令，电脑给你反馈。\n\n交互式环境适合试验和探索。输入 `exit()` 回车就能退出。\n\n---\n\n## 第四步：把代码保存成文件\n\n交互式环境适合试东西，但如果想重复使用代码，就得把它存成文件。\n\n### 创建你的第一个 .py 文件\n\n打开电脑自带的记事本（Windows 用"记事本"，Mac 用"文本编辑"），输入：\n\n```python\n# 这是我的第一个 Python 程序\nname = input("你叫什么名字？")\nprint(f"你好，{name}！欢迎来到 Python 的世界。")\n\n# 算一下年龄\nbirth_year = int(input("你是哪一年出生的？"))\nage = 2024 - birth_year\nprint(f"你大概 {age} 岁。\n")\n```\n\n保存为 `hello.py`，放在桌面上。\n\n### 运行它\n\n在终端里，输入：\n\n```bash\ncd Desktop           # 切换到桌面\npython hello.py     # 运行你的程序\n```\n\n程序会先问你的名字，再问出生年份，然后打印结果。**你写完并运行了人生第一个 Python 程序。**\n\n> 别小看这个程序。读取用户输入 → 做计算 → 输出结果，这三步是所有程序的底层骨架。淘宝、抖音、微信——本质上都是这个模式的无限复杂化。\n\n---\n\n## 第五步：推荐你的第一款代码编辑器\n\n记事本可以写代码，但体验很差——没有高亮、没有提示、没有自动补全。等你写了超过 20 行代码，你会需要一款正经的编辑器。\n\n对于新手，我推荐 **Visual Studio Code**（简称 VS Code）：\n\n1. [code.visualstudio.com](https://code.visualstudio.com) 下载安装（免费，支持中文界面）\n2. 安装后在左侧"扩展"面板里搜索并安装 **Python** 扩展（微软官方的那个）\n3. 用 VS Code 打开你的 `hello.py`，你会发现代码自动有了彩色高亮，输入时有智能提示\n\n还有一个更轻量的选择：**Thonny**（[thonny.org](https://thonny.org)）。它是专门为 Python 初学者设计的 IDE，界面干净，内置 Python 环境，下载安装后打开就能用，不需要任何配置。\n\n---\n\n## 第六步：遇到报错怎么办——看懂 Python 的错误信息\n\n你一定会遇到报错。**这太正常了，老程序员也天天看到报错。** 报错不是"你失败了"，是"Python 在给你线索"。\n\n看一个常见例子：\n\n```python\nprint("Hello"\n```\n\n忘了写后括号。Python 会报错：\n\n```\n  File "hello.py", line 1\n    print("Hello"\n                ^\nSyntaxError: unexpected EOF while parsing\n```\n\n很多新手看到大段英文就慌了。别慌，你只需要看这三个地方：\n\n| 关键信息 | 含义 | 这一行告诉你 |\n|----------|------|------------|\n| `File "hello.py", line 1` | 在哪个文件的哪一行出错 | 去 `hello.py` 的第 1 行附近找 |\n| `SyntaxError` | 错误类型 | 语法写错了（比如少了括号、引号没闭合） |\n| `unexpected EOF while parsing` | 具体原因 | 文件突然结束了，Python 在等待某样东西（这里就是后括号） |\n\n常见的错误类型：\n\n- **SyntaxError** — 语法错了（拼写、括号、引号）\n- **NameError** — 用了一个不存在的变量\n- **TypeError** — 数据类型用错了（比如把字符串和数字直接相加）\n- **IndentationError** — 缩进不对（Python 靠缩进来组织代码块）\n\n遇到报错时，**把报错信息里的最后一行复制到搜索引擎里搜一下**。90% 的问题，早就有成千上万人踩过同样的坑了。\n\n---\n\n## 第七步：第一周你应该学什么\n\n不要试图一周学完 Python。停下来，学会"用 Python 的过程"更重要。第一周的合理目标是：\n\n**第一天**：装好环境，写出第一个 `print("hello")`\n\n**第二天**：学会**变量**——`name = "张三"`，`age = 25`\n\n**第三天**：学会**输入和输出**——让程序问用户问题，再根据回答给出不同结果\n\n**第四天**：学会 **if 条件判断**——让程序学会"根据条件做不同的事"\n\n**第五天**：学会 **for 循环**——让程序学会"重复做一件事"\n\n**第六天**：把前几天学的串起来，写一个小程序——比如一个猜数字游戏\n\n**第七天**：休息，或者回顾一下这周写的代码\n\n每天只需要 30-60 分钟。关键是**每天动手写，不能光看视频和文章**。\n\n---\n\n## 免费学习资源推荐\n\n- **Python 官方教程**（中文版）：[docs.python.org/zh-cn/3/tutorial](https://docs.python.org/zh-cn/3/tutorial/)——最权威\n- **廖雪峰的 Python 教程**：搜索引擎搜就有——中文社区最经典的新手教程\n- **W3Schools Python Tutorial**：有在线代码运行器，不用装环境就能试\n\n> 教程选一个就够了——不要同时看三个，越看越乱。选一个你觉得能看下去的，从头到尾。\n\n---\n\n## 写在最后\n\n你可能觉得"变量""循环""函数"这些概念很难。我告诉你一个秘密：**没有人第一次学就完全搞懂了。**\n\n编程不是看懂的，是用懂的。你写第 100 个 `for` 循环的时候，它的概念对你来说已经跟呼吸一样自然——不是因为你理解了更好的解释，而是因为你已经写了 100 遍。\n\n> 今天的目标只有一个：装好 Python，在终端里打出 `print("我做到了")`。这就是你的第一行代码，也是你走向一个新世界的第一步。'
+  },
+  {
+    id:'why-python', type:'观点思考', icon:'🐍',
+    title:'为什么我建议每一个编程新手从 Python 开始',
+    desc:'Python 不是世界上最快的语言，也不是最时髦的，但它可能是对初学者最友好的。聊聊我为什么坚持推荐 Python 作为第一门语言。',
+    tags:'Python, 编程入门, 学习方法', words:2100, readMin:7,
+    content:'## 一个被问了无数遍的问题\n\n"我想学编程，应该从哪门语言开始？"\n\n这个问题在知乎、Reddit、V2EX 上被问了成千上万次。每次下面的回答都是一场宗教战争——有人说 JavaScript（因为能立刻做出网页），有人说 C（因为能理解底层），有人说 Rust（因为是未来）。\n\n我的答案始终只有一个：**Python。** 不是因为它完美，而是因为它在"学习体验"这个维度上做得最好。下面说说为什么。\n\n## 理由一：语法接近自然语言\n\n拿一个最简单的例子——打印"Hello"十次，来看看不同语言的写法：\n\n```c\n// C 语言\n#include <stdio.h>\nint main() {\n    for (int i = 0; i < 10; i++) {\n        printf("Hello\\\\n");\n    }\n    return 0;\n}\n```\n\n```java\n// Java\npublic class Main {\n    public static void main(String[] args) {\n        for (int i = 0; i < 10; i++) {\n            System.out.println("Hello");\n        }\n    }\n}\n```\n\n```python\n# Python\nfor i in range(10):\n    print("Hello")\n```\n\nPython 版本没有任何初学者看不懂的东西。没有 `#include`、没有 `public static void`、没有花括号、没有分号。它就是纯粹的"我要做这件事"。\n\n**初学编程最大的敌人是认知负担。** 你需要同时理解变量、循环、条件、函数等概念。如果还要花精力理解编译、类型声明、内存管理，太多人会在这第一道门槛前放弃。\n\n## 理由二：交互式环境让探索变得轻松\n\nPython 有一个被低估的优势：你可以打开终端，输入 `python`，然后立刻开始试验：\n\n```python\n>>> 3 + 5\n8\n>>> "hello".upper()\n\'HELLO\'\n>>> [i**2 for i in range(5)]\n[0, 1, 4, 9, 16]\n```\n\n不需要创建文件、不需要编译、不需要等待。想到什么试什么，试完立刻看到结果。这种即时反馈在学习的早期阶段极其宝贵——它把"编程"从一件抽象的事情变成了一件可以**玩耍**的事情。\n\n## 理由三：Python 能带你看到编程世界的全貌\n\n有人担心"学了 Python 之后只能做数据分析和脚本，局限太大了"。事实上恰恰相反——Python 的生态几乎覆盖了所有领域：\n\n- **Web 开发**——Django、FastAPI、Flask\n- **数据科学**——pandas、NumPy、Matplotlib\n- **机器学习**——PyTorch、scikit-learn、TensorFlow\n- **自动化**——Selenium、PyAutoGUI、定时脚本\n- **爬虫**——Scrapy、requests + BeautifulSoup\n- **游戏开发**——Pygame\n\n你不需要一开始就选方向。用 Python 先掌握编程的基础思维——变量、类型、函数、类、模块、异常——然后你会发现，这些概念在几乎所有语言中都是相通的。**第一门语言不是你的终点，是你的交通工具。** Python 是一辆自动挡的轿车，C 是一辆手动挡的卡车。先学会开车，再考虑换什么车。\n\n## 理由四：Python 社区对新手的包容度极高\n\nPython 社区有一句口号："Come for the language, stay for the community。"Stack Overflow 上 Python 问题的回答质量普遍很高，中文社区（如 Python 中文开发者社区）也活跃且乐于助人。更重要的是——Python 的错误信息相对友好，不像某些语言那样给你一堵墙般的堆栈追踪。\n\n## 当然，Python 并不完美\n\n诚实地说，Python 有明显的短板：\n\n- **运行速度慢**——比 C、Rust、Go 慢一个数量级以上\n- **GIL 限制**——多线程在 CPU 密集型任务上几乎没用\n- **动态类型**——大型项目中类型错误可能到运行时才暴露\n- **移动端开发几乎不可用**——想写 iOS/Android 应用，基本得换语言\n\n但这些缺点对初学者来说几乎毫无影响。你不需要在第一天就关心 GIL 和性能优化。你需要的是一个让你觉得"编程原来可以这么有趣"的体验。\n\n## 写在最后\n\n如果你正在纠结第一门语言学什么，我的建议很简单：装一个 Python，打开终端，输入 `print("Hello World")`。然后试着改几个字、算几个数、写一个简单的猜数字游戏。\n\n不要纠结"这门语言是不是最好的"。等你用 Python 写了几千行代码之后，你自然会知道自己下一步想探索什么——也许是 C 的底层之美，也许是 JavaScript 的无所不在，也许是 Rust 的性能和安全。\n\n> 最好的第一门语言，是让你愿意写第二行代码的那一门。'
+  },
+  {
+    id:'py-basics', type:'语法入门', icon:'🐍',
+    title:'Python 基础语法全景图：从 Hello World 到写出第一个实用脚本',
+    desc:'面向零基础读者的 Python 语法通关指南。覆盖变量、数据类型、条件循环、函数、文件读写和异常处理，每节都有可运行的代码示例。',
+    tags:'Python, 基础语法, 入门, 教程', words:2800, readMin:9,
+    content:'## 前言\n\n如果你刚接触编程，Python 可能已经是你听到最多的名字之一。它语法简单，但功能强大，从数据分析到 Web 开发到 AI，几乎无处不在。\n\n这篇文章的目标很明确：**带你从零基础，一路走完 Python 最核心的语法，直到能写出一个可用的命令行小工具。** 不会啰嗦，每节都有能直接跑的代码。\n\n---\n\n## 1. 第一个程序：Hello World\n\n打开命令行，输入 `python`，你会看到一个 `>>>` 提示符——这就是 Python 的**交互式解释器**。试试：\n\n```python\n>>> print("Hello World")\nHello World\n```\n\n一行搞定。不需要 `main` 函数，不需要编译，不需要分号。这就是 Python。\n\n如果想把代码保存成文件，创建一个 `hello.py`：\n\n```python\nprint("Hello World")\nprint("这是我的第一个 Python 程序")\n```\n\n然后在终端运行：\n\n```bash\npython hello.py\n```\n\n---\n\n## 2. 变量：给数据起个名字\n\nPython 的变量不需要声明类型，直接赋值就能用：\n\n```python\nname = "张三"          # 字符串\nage = 25               # 整数\nheight = 1.75          # 浮点数\nis_student = True      # 布尔值\n\nprint(name, age, height, is_student)\n# 张三 25 1.75 True\n```\n\n**命名规则很简单：**\n\n- 只能包含字母、数字和下划线，不能以数字开头\n- 区分大小写：`name` 和 `Name` 是不同的变量\n- 推荐用 `snake_case` 风格：`user_name` 而不是 `userName`\n\n```python\n# 好的命名\nuser_name = "李四"\nmax_retry_count = 3\n\n# 不好的命名——能跑，但不推荐\na = "李四"\nUser_Name = "李四"  # 混用大小写很难受\n```\n\n---\n\n## 3. 数据类型：Python 里的一切都是对象\n\n### 数字\n\n```python\na = 10        # int\nb = 3.14      # float\nc = 2 + 3j    # complex（复数，很少用到）\n\nprint(a + b)        # 13.14\nprint(a // 3)       # 3   —— 整除（向下取整）\nprint(a % 3)        # 1   —— 取余\nprint(a ** 3)       # 1000 —— 幂运算\n```\n\n### 字符串\n\n```python\nname = "Python"\ngreeting = \'你好\'\n\n# 拼接\nfull = greeting + "，" + name   # "你好，Python"\n\n# f-string —— 最推荐的格式化方式（Python 3.6+）\nversion = 3.12\nprint(f"{name} 的最新版本是 {version}")\n# Python 的最新版本是 3.12\n\n# 常用方法\nprint(name.upper())       # PYTHON\nprint(name.lower())       # python\nprint(len(name))          # 6\nprint(name[0])            # P —— 索引从 0 开始\nprint(name[-1])           # n —— 负数索引从末尾开始\nprint(name[0:3])          # Pyt —— 切片 [起始:结束)\n```\n\n### 列表\n\n列表是 Python 中最常用的容器——有序、可修改、可放任意类型：\n\n```python\nfruits = ["苹果", "香蕉", "橘子"]\nfruits.append("草莓")            # 追加到末尾\nfruits.insert(1, "葡萄")         # 在索引 1 处插入\nfruits.remove("香蕉")            # 按值删除\n\nprint(fruits)                    # [\'苹果\', \'葡萄\', \'橘子\', \'草莓\']\nprint(fruits[0])                 # 苹果\nprint(fruits[-1])                # 草莓 —— 最后一个\nprint(fruits[1:3])               # [\'葡萄\', \'橘子\'] —— 切片\nprint(len(fruits))               # 4\n\n# 列表推导式 —— Python 的灵魂语法之一\nnumbers = [1, 2, 3, 4, 5]\nsquares = [n ** 2 for n in numbers]\nprint(squares)                   # [1, 4, 9, 16, 25]\n\n# 带条件的推导式\neven = [n for n in numbers if n % 2 == 0]\nprint(even)                      # [2, 4]\n```\n\n### 字典\n\n键值对容器——Python 中最重要的数据结构之一：\n\n```python\nuser = {\n    "name": "张三",\n    "age": 25,\n    "city": "北京"\n}\n\nprint(user["name"])              # 张三\nprint(user.get("email", "未设置"))  # 未设置 —— 安全取值，不存在不报错\n\nuser["age"] = 26                  # 修改\nuser["email"] = "zhang@example.com"  # 新增\n\n# 遍历\nfor key, value in user.items():\n    print(f"{key}: {value}")\n```\n\n### 元组和集合\n\n```python\n# 元组 —— 不可修改的列表\npoint = (3, 4)\nx, y = point          # 解包\nprint(x, y)           # 3 4\n\n# 集合 —— 不重复、无序\ncolors = {"红", "蓝", "绿", "红"}\nprint(colors)         # {\'红\', \'蓝\', \'绿\'} —— 重复的"红"自动去掉了\n\n# 集合运算\na = {1, 2, 3}\nb = {2, 3, 4}\nprint(a & b)          # {2, 3} —— 交集\nprint(a | b)          # {1, 2, 3, 4} —— 并集\n```\n\n---\n\n## 4. 条件判断：让程序学会"选择"\n\n```python\nscore = 85\n\nif score >= 90:\n    print("优秀")\nelif score >= 80:\n    print("良好")\nelif score >= 60:\n    print("及格")\nelse:\n    print("不及格")\n\n# 输出：良好\n```\n\n**缩进是关键。** Python 不用花括号，靠缩进（通常 4 个空格）决定哪些语句属于同一个代码块：\n\n```python\nif score >= 60:\n    print("恭喜，你通过了")     # 属于 if 块\n    print("继续努力")           # 属于 if 块\nprint("程序结束")              # 不属于 if 块，无论如何都会执行\n```\n\n比较运算符：`==`（等于）、`!=`（不等于）、`>`、`<`、`>=`、`<=`\n\n逻辑运算符：`and`（与）、`or`（或）、`not`（非）\n\n```python\nage = 22\nhas_ticket = True\n\nif age >= 18 and has_ticket:\n    print("可以入场")\n```\n\n---\n\n## 5. 循环：让程序学会"重复"\n\n### for 循环 —— 遍历序列\n\n```python\n# 遍历列表\nnames = ["张三", "李四", "王五"]\nfor name in names:\n    print(f"你好，{name}")\n\n# range() —— 生成数字序列\nfor i in range(5):         # 0, 1, 2, 3, 4\n    print(i)\n\nfor i in range(2, 6):      # 2, 3, 4, 5\n    print(i)\n\nfor i in range(0, 10, 2):  # 0, 2, 4, 6, 8 —— 步长为 2\n    print(i)\n```\n\n### while 循环 —— 条件成立就一直跑\n\n```python\ncount = 0\nwhile count < 3:\n    print(f"第 {count + 1} 次尝试")\n    count += 1\n```\n\n### break 和 continue\n\n```python\n# break —— 直接退出循环\nfor i in range(10):\n    if i == 5:\n        break\n    print(i)           # 只打印 0 到 4\n\n# continue —— 跳过本轮，继续下一轮\nfor i in range(5):\n    if i == 2:\n        continue\n    print(i)           # 打印 0, 1, 3, 4 —— 跳过了 2\n```\n\n### enumerate —— 同时获取索引和值\n\n```python\nfruits = ["苹果", "香蕉", "橘子"]\nfor index, fruit in enumerate(fruits):\n    print(f"{index}: {fruit}")\n# 0: 苹果\n# 1: 香蕉\n# 2: 橘子\n```\n\n---\n\n## 6. 函数：把代码打包成积木\n\n```python\ndef greet(name):\n    """向某人问好 —— 这是文档字符串（docstring）"""\n    return f"你好，{name}！"\n\n# 调用\nmessage = greet("张三")\nprint(message)  # 你好，张三！\n```\n\n**参数可以设默认值：**\n\n```python\ndef greet(name, greeting="你好"):\n    return f"{greeting}，{name}！"\n\nprint(greet("张三"))                    # 你好，张三！\nprint(greet("张三", greeting="早上好"))  # 早上好，张三！\n```\n\n**任意数量的参数：**\n\n```python\ndef sum_all(*args):\n    """接收任意数量的位置参数"""\n    return sum(args)\n\nprint(sum_all(1, 2, 3, 4, 5))  # 15\n\n\ndef print_info(**kwargs):\n    """接收任意数量的关键字参数"""\n    for key, value in kwargs.items():\n        print(f"{key}: {value}")\n\nprint_info(name="张三", age=25, city="北京")\n# name: 张三\n# age: 25\n# city: 北京\n```\n\n---\n\n## 7. 文件读写：让数据持久化\n\n```python\n# ── 写入文件 ──\nwith open("notes.txt", "w", encoding="utf-8") as f:\n    f.write("第一行文字\\n")\n    f.write("第二行文字\\n")\n\n# ── 读取文件 ──\nwith open("notes.txt", "r", encoding="utf-8") as f:\n    content = f.read()          # 一次性读取全部\n    print(content)\n\nwith open("notes.txt", "r", encoding="utf-8") as f:\n    for line in f:              # 逐行读取——大文件推荐\n        print(line.strip())      # strip() 去掉末尾的换行符\n```\n\n文件模式：`"r"` 只读，`"w"` 覆盖写入，`"a"` 追加写入，`"r+"` 读写。\n\n**`with` 语句会自动关闭文件**，即使中途出错也不会忘记关——永远用 `with`，不要手动 `f.close()`。\n\n---\n\n## 8. 异常处理：程序也要学会容错\n\n```python\ntry:\n    num = int(input("请输入一个数字: "))\n    result = 100 / num\n    print(f"100 除以 {num} = {result}")\nexcept ValueError:\n    print("不是有效的数字！")\nexcept ZeroDivisionError:\n    print("除数不能是 0！")\nexcept Exception as e:\n    print(f"发生了未知错误: {e}")\nelse:\n    print("计算成功！")      # 没有异常时执行\nfinally:\n    print("程序结束")         # 无论如何都会执行\n```\n\n**实用的场景——读取文件时兜底：**\n\n```python\ntry:\n    with open("config.json", "r", encoding="utf-8") as f:\n        config = f.read()\nexcept FileNotFoundError:\n    print("配置文件不存在，使用默认配置")\n    config = \'{}\'\n```\n\n---\n\n## 9. 综合实战：一个命令行待办事项工具\n\n学完基础语法，最好的巩固方式就是写一个小项目。下面是一个能在命令行里用的待办事项工具，用到了列表、字典、函数、文件读写和异常处理：\n\n```python\nimport json\nfrom pathlib import Path\n\nDATA_FILE = Path.home() / ".todo_app.json"\n\n\ndef load_tasks():\n    """从文件加载任务列表"""\n    try:\n        return json.loads(DATA_FILE.read_text(encoding="utf-8"))\n    except (FileNotFoundError, json.JSONDecodeError):\n        return []\n\n\ndef save_tasks(tasks):\n    """保存任务到文件"""\n    DATA_FILE.write_text(json.dumps(tasks, ensure_ascii=False, indent=2),\n                         encoding="utf-8")\n\n\ndef add_task(title):\n    tasks = load_tasks()\n    task_id = len(tasks) + 1\n    tasks.append({"id": task_id, "title": title, "done": False})\n    save_tasks(tasks)\n    print(f"✓ 已添加任务 #{task_id}: {title}")\n\n\ndef list_tasks():\n    tasks = load_tasks()\n    if not tasks:\n        print("还没有任何任务。用 \'add\' 命令添加一个吧。")\n        return\n    print("\\n📋 待办事项:")\n    for t in tasks:\n        status = "✓" if t["done"] else "○"\n        print(f"  {status} #{t[\'id\']} {t[\'title\']}")\n    completed = sum(1 for t in tasks if t["done"])\n    print(f"\\n完成: {completed}/{len(tasks)}\\n")\n\n\ndef mark_done(task_id):\n    tasks = load_tasks()\n    for t in tasks:\n        if t["id"] == task_id:\n            t["done"] = True\n            save_tasks(tasks)\n            print(f"✓ 任务 #{task_id} 已完成！")\n            return\n    print(f"没有找到任务 #{task_id}")\n\n\ndef delete_task(task_id):\n    tasks = load_tasks()\n    tasks = [t for t in tasks if t["id"] != task_id]\n    save_tasks(tasks)\n    print(f"✓ 已删除任务 #{task_id}")\n\n\n# ── 命令行入口 ──\nif __name__ == "__main__":\n    import sys\n    if len(sys.argv) < 2:\n        print("用法: python todo.py [add|list|done|delete] [参数]")\n        sys.exit(0)\n\n    command = sys.argv[1]\n\n    if command == "add":\n        title = sys.argv[2] if len(sys.argv) > 2 else input("任务内容: ")\n        add_task(title)\n    elif command == "list":\n        list_tasks()\n    elif command == "done":\n        mark_done(int(sys.argv[2]))\n    elif command == "delete":\n        delete_task(int(sys.argv[2]))\n    else:\n        print(f"未知命令: {command}")\n```\n\n使用方法：\n\n```bash\npython todo.py add "买牛奶"\npython todo.py add "写完周报"\npython todo.py list\npython todo.py done 1\npython todo.py delete 2\n```\n\n这个小工具包含了这篇文章几乎所有的知识点：变量、列表、字典、函数、条件判断、循环、文件读写、异常处理、列表推导式、f-string。如果你能独立写出来，说明 Python 基础语法已经扎实了。\n\n---\n\n## 写在最后\n\nPython 基础语法不难，但有几个容易踩坑的点值得特别注意：\n\n1. **缩进不是装饰**——它决定了代码块边界。混用空格和 Tab 会直接报错\n2. **变量没有类型声明**——方便但也意味着你得自己心里有数，`name = "张三"` 和 `name = 25` 同时出现在同一段代码里虽然不报错，但大概率是 bug\n3. **列表是引用类型**——`a = [1,2]; b = a; b.append(3); print(a)` 会输出 `[1,2,3]`，因为 a 和 b 指向同一个列表对象。要复制用 `b = a.copy()`\n4. **`open()` 永远配合 `with`**——别手写 `f.close()`\n\n> 编程不是背语法，是解决问题。读完这篇文章之后，打开终端，试着把那个 todo 工具改一改——加上"编辑任务"、加上"按完成状态筛选"、加上"清空已完成的任务"。你改动第一行代码的那一刻，才是真正开始学习。'
+  },
+  {
+    id:'python-mistakes', type:'Python 排坑', icon:'💡',
+    title:'自学 Python 最容易踩的 8 个坑：一个过来人的避雷指南',
+    desc:'不是语法教程，是新手上路前最该了解的"不要做什么"。从环境混乱到无效学习，从看视频不动手到不懂求助——每条都是真实踩过的坑。',
+    tags:'Python, 自学方法, 避坑, 入门', words:2300, readMin:7,
+    content:'## 前言\n\n网上有 100 篇"Python 入门教程"，但很少有人告诉你——**初学阶段最容易犯的错是什么。**\n\n我自己学 Python 的时候，把能犯的错几乎全犯了一遍：装了三四个互相打架的 Python 版本，抄了上百行"教程代码"但一行都改不动，看了一个月视频发现还是写不出东西。\n\n这篇文章总结了自学 Python 路上最常遇到的 8 个坑。不是语法问题，而是**方法论问题**——如果能提前知道，你至少能少走一半的弯路。\n\n---\n\n## 坑一：环境装得一塌糊涂\n\n**典型症状**：装了 Python 3.10，又装了一个 3.11，还装了 Anaconda。三个版本的 Python 在电脑里打架，`pip install` 装的东西不知道跑到哪个版本里去了。终端打 `python` 和 `python3` 指向不同的版本，完全混乱。\n\n**解决方案**：**只装一个 Python 版本。**\n\n- Windows 用户：去 python.org 下载最新版（如 3.12），安装时**务必勾选"Add Python to PATH"**\n- 新手不要碰 Anaconda——它确实强大，但对初学者来说是多余的认知负担\n- 检查当前环境：终端输入 `python --version` 和 `pip --version`，确保它们指向同一个版本\n\n> 一个干净的 Python 环境，比一堆互相冲突的工具强一百倍。\n\n---\n\n## 坑二：只看视频不动手——"眼睛学会了，手还是废的"\n\n**典型症状**：看了一小时教学视频，跟着老师敲代码，感觉"嗯，懂了"。关掉视频——大脑一片空白，一行都写不出来。\n\n**原因**：看别人写代码是"识别"，自己写代码是"回忆"。识别只需要"哦这个我见过"，回忆需要"从零构建"——难度差一个数量级。\n\n**解决方案**：看完视频的每一个小节后——\n\n1. **关掉视频**\n2. **凭记忆重新写一遍**刚才讲的内容\n3. **改一下**：把老师的例子换个场景。比如老师用 `for` 循环打印了 1 到 10，你就改成打印 1 到 100 的偶数\n4. **报错了就查**——这是你最应该练习的技能\n\n> 编程不是看会的，是写会的。手指的记忆比眼睛可靠 100 倍。\n\n---\n\n## 坑三：抄代码但不理解每一行在干什么\n\n**典型症状**：从网上复制了一段代码，跑通了，很开心。但其中有一行 `for i in range(len(data)):`，你不知道为什么有个 `len()`，也不知道能不能写成别的。下次遇到类似场景，依然不会写。\n\n**解决方案**：**每写一行代码，问自己三个问题：**\n\n1. 这一行在做什么？（能用自己的话说出来）\n2. 为什么要有它？（删掉会怎样？试试看）\n3. 能不能换个写法？（改一改，看效果）\n\n比如这一行：\n\n```python\nsquares = [n**2 for n in numbers]\n```\n\n理解了就能换成：\n\n```python\nsquares = []\nfor n in numbers:\n    squares.append(n**2)\n```\n\n**一个概念，只有你能用两种以上的写法写出来，才是真懂了。**\n\n---\n\n## 坑四：学语法学了三个月还没写过完整项目\n\n**典型症状**：学完了变量、学了循环、学了函数、学了类、学了异常处理……但从来没有用这些知识写过任何超过 50 行的程序。一直在学语法，永远在"准备"。\n\n**真相**：你不需要学完所有语法才能开始写程序。**学到"循环"就够了。**\n\n学完变量 + 条件 + 循环之后，立刻停掉教程，花三天时间写一个完整的程序。哪怕是最简单的——一个猜数字游戏、一个通讯录管理工具、一个消费记账脚本。\n\n**"写完整项目"的能力是需要单独练习的**，它跟"学新语法"是两种完全不同的技能。哪怕项目里只用到了你最基础的知识，那种"我把一个想法从零变成能跑的代码"的成就感，是你继续学下去最重要的燃料。\n\n---\n\n## 坑五：英文报错不看，直接复制粘贴去问人\n\n**典型症状**：程序报错了，看到一堆英文，第一反应是截图发群、发朋友圈问"这是什么意思？"\n\n**真相**：**读报错信息是程序员最重要的基本功，没有之一。** Python 的错误信息已经非常友好了——它明确告诉你在哪个文件的第几行出了什么类型的错误。\n\n养成这个习惯：每次看到报错——\n\n1. 先看**文件名和行号**——定位到出错的位置\n2. 再看**错误类型**——是 `SyntaxError`（语法错）还是 `NameError`（变量未定义）还是 `TypeError`（类型错）\n3. 最后看**描述**——它会告诉你具体哪里不对\n4. 实在看不懂？把错误信息最后一行复制到搜索引擎\n\n**至少花 3 分钟自己读一读报错信息，再去问别人。** 这个习惯会让你受益整个编程生涯。\n\n---\n\n## 坑六：完美主义——非要搞懂一切才继续\n\n**典型症状**：学到 `函数` 这一节，突然看到一个概念叫"闭包"，查了三个小时也不知道是什么。于是卡住了，觉得自己不弄懂就不能继续往下学。\n\n**真相**：**有些概念你现在就是不可能完全理解的，因为你还没遇到它要解决的问题。**\n\n我学 Python 第一周就看到了"装饰器"这个词。当时完全不懂。半年后当我真的遇到了"想给 10 个函数都加上计时功能"的场景时，再看装饰器——"就这？"\n\n**学习编程不是线性的。** 很多概念你需要先"模糊地知道有这个东西"，再在实际使用中反复遇到，最后才真正理解。给自己不理解的自由，继续往前。\n\n> 遇到不懂的东西，花 15 分钟了解一下。如果还是不懂——记下来，继续走。一个月后大概率你自己就懂了。\n\n---\n\n## 坑七：学得太孤独，没有人可以交流\n\n**典型症状**：一个人对着电脑学了一个月，遇到 bug 自己闷头调了两个小时搞不定，越来越沮丧，觉得"我是不是不适合学编程"。\n\n**真相**：你不是不适合，你只是缺少一个能交流的人。\n\n编程本质上是一个集体活动——几乎所有程序员都在 Stack Overflow 上提问、在 GitHub 上看别人的代码、在技术社区里讨论。**没有人是靠自己一个人学会的。**\n\n找组织的方法：\n\n- **搜索引擎搜"Python 学习群"** —— 加一两个活跃的新手群，能提问就行\n- **B 站评论区** —— 在你正看的学习视频下面留言提问，up 主或其他学习者会回复\n- **GitHub** —— 搜 "python beginner project"，看别人怎么写代码\n\n不要觉得问低级问题会丢人。**每个老手都是从问"print 怎么不打印"开始走过来的。**\n\n---\n\n## 坑八：每天的"学习"只是在消耗学习材料\n\n**典型症状**：每天点开一个教程视频，看了 40 分钟，感觉自己"学习了"。但第二天没有任何产出——没有写代码、没有记笔记、没有产出任何东西。\n\n**真相**：**"看"不是学习，"做"才是。**\n\n衡量你今天学没学 Python，不是看"我看了多少分钟"，而是看：\n\n- 今天我写了几行代码？\n- 今天报了什么错，我是怎么解决的？\n- 今天有没有学到一个新的想法，并立刻动手试了试？\n\n建议每天结束时，花两分钟写一个"今日 Python 学习日志"：\n\n```\n日期：\n今天学到的一个新东西：\n今天写的一段代码（贴过来）：\n遇到的一个问题 & 怎么解决的：\n```\n\n三个月后回头看，你会被自己的积累吓到。\n\n---\n\n## 写在最后\n\n上面这 8 个坑，本质上都不是"Python 语法难学"的问题——语法反而是整个学习过程中最简单的部分。\n\n真正难的是：**建立正确的学习方法和心态。** 编程不是一门知识，而是一门手艺。手艺不是看会的，是一遍一遍练会的。\n\n> 你不需要天赋，你只需要开始。你不需要完美，你只需要持续。\n>\n> 今天写下一行报错也没关系的代码，明天改掉那行 bug，后天发现"哇，它跑起来了"——这就是一个程序员诞生的过程。'
+  },
+  {
+    id:'python-roadmap', type:'Python 规划', icon:'🗺️',
+    title:'Python 学习路线图：从零基础到能独立做项目的完整路径',
+    desc:'不列 100 本书，不讲"学完这些就能拿 offer"。一张真实可走的学习路线图，分三个阶段，每阶段有明确目标和推荐项目，适合自学迷茫期的新手。',
+    tags:'Python, 学习路线, 自学规划, 入门', words:2500, readMin:8, content:'## 你可能正在经历的阶段\n\n打开搜索引擎，输入"Python 怎么学"——你会看到几十篇帖子，每一篇都列了几十本书、几十门课、上百个"必知必会"的知识点。然后你就迷茫了：**这么多东西，我该从哪里开始？先后顺序是什么？学到什么程度才算"够了"？**\n\n这篇文章把 Python 自学之路分成三个阶段。每个阶段有明确的目标、时间预期、推荐资源和检验标准——不是"你该学这个"，而是"到了这一步，你就合格了"。\n\n---\n\n## 第一阶段：打基础（1-2 个月）\n\n### 目标\n\n能用 Python 解决日常生活中的小问题——比如处理 Excel 文件、批量改文件名、写一个猜数字游戏。能独立写出 50-100 行的程序。\n\n### 必须学会的 8 个核心概念\n\n按顺序来，不要跳：\n\n| 顺序 | 概念 | 学到什么程度算会了 |\n|------|------|------------------|\n| 1 | **变量和数据类型** | 知道 `str`、`int`、`float`、`bool`、`list`、`dict` 分别是什么，什么时候用哪个 |\n| 2 | **输入和输出** | 能用 `input()` 让用户输入，用 `print()` 输出结果 |\n| 3 | **条件判断（if/elif/else）** | 能根据条件让程序走不同分支 |\n| 4 | **循环（for/while）** | 能用循环遍历列表，能用 `range()` 控制次数 |\n| 5 | **字符串操作** | 会用 `split()`、`join()`、`strip()`、f-string 格式化 |\n| 6 | **列表和字典操作** | 会增删改查、遍历、列表推导式、按 key 取值 |\n| 7 | **函数** | 会定义函数、传参数、返回值、理解"函数就是打包一段逻辑" |\n| 8 | **文件读写** | 会用 `with open()` 读写文本文件 |\n\n**不需要在第一阶段学的内容：** 类（class）、装饰器、生成器、正则表达式、任何第三方框架。这些是第二第三阶段的，不要现在碰。\n\n### 第一阶段检验标准\n\n独立完成下面任意 **3 个**小项目，就算过关：\n\n1. **猜数字游戏**：程序随机生成 1-100 的数字，用户猜，程序提示"大了"或"小了"，直到猜对\n2. **通讯录管理**：用字典存联系人信息，支持添加、查找、删除、列出全部\n3. **个人记账本**：用户输入日期、金额、类别、备注，存到文件里；支持查看历史记录和按类别统计\n4. **单词翻译器**：准备一个简单的英文-中文对照字典，用户输入英文，返回中文\n5. **密码生成器**：根据用户指定的长度和是否包含特殊字符，随机生成一个密码\n\n> 这些项目看起来很简单，但它们涵盖了变量、循环、条件、函数、文件读写——你学会了这些，就已经超过了"光看教程不动手"阶段 90% 的人。\n\n---\n\n## 第二阶段：进阶工具（2-4 个月）\n\n### 目标\n\n能使用第三方库解决更复杂的问题——爬取网页、处理数据、自动发邮件、操作 Excel/PDF。能用 Git 管理代码。遇到问题知道怎么搜索和看文档。\n\n### 必须掌握的能力\n\n| 顺序 | 内容 | 为什么重要 |\n|------|------|----------|\n| 1 | **会用 pip 安装第三方库** | 这是你走出 Python 标准库的第一步 |\n| 2 | **错误处理（try/except）** | 让你的程序在出错时不崩溃 |\n| 3 | **看懂报错信息** | 不再看到英文报错就慌 |\n| 4 | **requests 库** | 发 HTTP 请求——所有爬虫和 API 调用的基础 |\n| 5 | **pandas 基础** | 处理表格数据：筛选、排序、分组、合并 |\n| 6 | **学会查文档** | 遇到不会的函数，第一反应不是问人，而是看官方文档或搜索引擎搜索 |\n| 7 | **Git 基础** | 会 `commit`、`push`、`pull`、`clone`——把你的代码托管到 GitHub |\n| 8 | **写一个小项目并上传到 GitHub** | 从"写代码"到"管理项目"的质变 |\n\n### 第二阶段检验标准\n\n挑 1-2 个完成：\n\n1. **爬取豆瓣 Top 250**：抓取电影名、评分、短评，存到 CSV 文件\n2. **数据自动报表**：用 pandas 读取一个 Excel，做数据清洗、统计分析，输出一个带图表的报告\n3. **网页自动签到**：用 requests 写一个每日自动签到的脚本（比如 V2EX 或 52pojie 的签到）\n4. **文件批量处理器**：扫描一个文件夹，把图片、文档、视频分类整理到不同的子文件夹\n5. **个人博客爬虫**：把你收藏的博客文章标题和链接爬下来，生成一份阅读清单\n\n### 第二阶段最重要的转折\n\n在这个阶段，你的身份会从"学 Python 的人"变成"用 Python 解决问题的人"。\n\n你会发现自己不再问"这个语法怎么用"，而是问"这个问题怎么解决"。你开始看英文文档不再恐惧。你开始在 GitHub 上搜索别人的代码参考。这是从入门到进阶最关键的心理转变。\n\n---\n\n## 第三阶段：独立做项目（4-6 个月及以上）\n\n### 目标\n\n能独立完成一个完整的项目——从需求分析到代码结构设计，到实现，到测试，到部署上线。\n\n### 选一个方向深入\n\nPython 的世界很大，你不需要全都会。选一个你感兴趣的方向往下挖：\n\n| 方向 | 核心技术栈 | 适合谁 |\n|------|-----------|--------|\n| **Web 开发** | Flask / FastAPI + HTML/CSS + SQL | 想做网站、API、后台系统 |\n| **数据分析** | pandas + Matplotlib + SQL | 喜欢跟数据和图表打交道 |\n| **自动化脚本** | requests + selenium + schedule + smtplib | 喜欢让电脑帮你干活 |\n| **AI / 机器学习** | scikit-learn + PyTorch | 对人工智能有强烈兴趣（门槛最高） |\n\n**关键决策：只选一个方向，深入学 3 个月以上再考虑换。** 不要每个方向都浅尝辄止。\n\n### 第三阶段检验标准\n\n完成一个"可以拿给朋友展示"的项目：\n\n- **Web 方向**：一个完整的小网站，有注册登录、数据展示、增删改查功能\n- **数据方向**：用公开数据完成一个完整的数据分析项目——从获取数据、清洗、分析到可视化报告\n- **自动化方向**：一套 3-5 个脚本的自动化工具集，能独立解决一个完整的日常工作流程\n- **AI 方向**：训练一个模型完成一个具体任务（比如图片分类、文本情感分析）\n\n### 部署你的项目\n\n把代码传到 GitHub 上，写好 README 文档（项目介绍 + 安装步骤 + 使用说明 + 效果截图）。\n\n如果做的是 Web 项目，试着把它部署到网上——可以用免费的 [PythonAnywhere](https://pythonanywhere.com) 或者 [Render](https://render.com)。一个能通过网址访问的活的项目，比简历上写"熟悉 Python"有说服力一万倍。\n\n---\n\n## 全程通用建议\n\n### 每天学多久\n\n**30-60 分钟足矣，关键是每天都学。** 每天 30 分钟坚持半年，比周末突击一整天但平时不碰有效得多。\n\n### 笔记怎么记\n\n不要抄教程里的代码，记这些：\n\n- 今天遇到的一个报错 + 怎么解决的\n- 学了哪个新函数，它的输入、输出、使用场景\n- 想实现某个功能，搜索什么关键词最有效\n\n用 Markdown 记笔记（Typora 或 VS Code），方便搜索和整理。\n\n### 遇到问题怎么求助\n\n提问前先做这三件事：\n\n1. 把报错信息在搜索引擎里搜一遍\n2. 试着把你的问题用中文描述清楚——"我想做什么 + 我做了什么 + 出现了什么结果 + 我期望什么结果"\n3. 把代码和报错信息一起贴到提问里\n\n一个清晰的问题描述，能让你在群里或者论坛上 5 分钟内得到答案。\n\n---\n\n## 写在最后\n\n每个人学 Python 的速度不一样。有人两个月就能独立做项目，有人需要半年。这不重要。重要的是——**一直在往前走。**\n\n你不需要跟任何人比。你只需要比上周的自己多知道一个概念，多写了一个能跑的脚本。\n\n> 路很长，但你不需要一开始就看到终点。你只需要看到下一个路口——然后走过去。'
+  }
+];
+
+// ═══════════════ STATE ═══════════════
+let currentView = 'gallery';
+let currentTemplateId = null;
+let tags = [];
+let focusMode = false;
+let saveTimer = null;
+
+// ═══════════════ GALLERY ═══════════════
+function renderGallery() {
+  document.getElementById('grid').innerHTML = TEMPLATES.map(t => `
+    <div class="card" onclick="openTemplate('${t.id}')">
+      <div class="card-meta"><span class="card-type-icon">${t.icon}</span>${t.type}</div>
+      <h3>${t.title}</h3>
+      <p class="card-desc">${t.desc}</p>
+      <div class="card-bottom">
+        <span>${t.words.toLocaleString()} 字 · ${t.readMin} 分钟阅读</span>
+        <span class="hint">打开 →</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════ VIEW SWITCHING ═══════════════
+function showGallery() {
+  currentView = 'gallery';
+  currentTemplateId = null;
+  document.getElementById('galleryView').style.display = 'block';
+  document.getElementById('editorView').style.display = 'none';
+  document.getElementById('navSep').style.display = 'none';
+  document.getElementById('navCur').textContent = '';
+  renderHeaderActions();
+}
+
+function showEditor() {
+  currentView = 'editor';
+  document.getElementById('galleryView').style.display = 'none';
+  document.getElementById('editorView').style.display = 'block';
+  document.getElementById('navSep').style.display = '';
+  updateNav();
+  renderHeaderActions();
+}
+
+function updateNav() {
+  const el = document.getElementById('navCur');
+  if (currentTemplateId) {
+    const t = TEMPLATES.find(x => x.id === currentTemplateId);
+    el.textContent = t ? t.title : '自由写作';
+  } else {
+    el.textContent = '自由写作';
+  }
+}
+
+function renderHeaderActions() {
+  const c = document.getElementById('headerActions');
+  if (currentView === 'gallery') {
+    c.innerHTML = '<button class="btn btn-outline btn-sm" onclick="startBlank()">从空白开始</button>';
+  } else {
+    c.innerHTML = `
+      <button class="btn btn-outline btn-sm" onclick="showGallery()">模板库</button>
+      <button class="btn btn-outline btn-sm" onclick="clearEditor()">清空</button>
+      <button class="btn btn-primary btn-sm" onclick="copyMarkdown()">复制 Markdown</button>
+      <button class="btn btn-outline btn-sm" onclick="copyRichHTML()">复制富文本</button>
+      <button class="btn btn-outline btn-sm" onclick="exportHTML()">导出 HTML</button>
+    `;
+  }
+}
+
+// ═══════════════ LOAD TEMPLATE ═══════════════
+function openTemplate(id) {
+  const t = TEMPLATES.find(x => x.id === id);
+  if (!t) return;
+  currentTemplateId = id;
+  document.getElementById('titleInput').value = t.title;
+  document.getElementById('editor').value = t.content;
+  tags = t.tags.split(',').map(s => s.trim()).filter(Boolean);
+  renderTags();
+  showEditor();
+  refreshPreview();
+  updateOutline();
+  showToast('模板已加载');
+}
+
+function startBlank() {
+  currentTemplateId = null;
+  document.getElementById('titleInput').value = '';
+  document.getElementById('editor').value = '';
+  tags = [];
+  renderTags();
+  showEditor();
+  refreshPreview();
+  updateOutline();
+}
+
+function clearEditor() {
+  if (!confirm('确定要清空所有内容吗？')) return;
+  currentTemplateId = null;
+  document.getElementById('titleInput').value = '';
+  document.getElementById('editor').value = '';
+  tags = [];
+  renderTags();
+  refreshPreview();
+  updateOutline();
+  localStorage.removeItem('draft');
+  showToast('已清空');
+}
+
+// ═══════════════ TAG CHIPS ═══════════════
+function renderTags() {
+  const container = document.getElementById('tagChips');
+  container.innerHTML = tags.map((t, i) =>
+    `<span class="tag-chip">${esc(t)}<span class="tag-x" onclick="rmTag(${i})">&times;</span></span>`
+  ).join('') + '<input type="text" id="tagInputInline" placeholder="回车添加标签…" onkeydown="handleTagKey(event)" onblur="commitTag()">';
+}
+
+function handleTagKey(e) {
+  if (e.key === 'Enter') { e.preventDefault(); commitTag(); }
+  if (e.key === 'Backspace' && e.target.value === '' && tags.length > 0) {
+    tags.pop(); renderTags(); onEditorChange();
+  }
+}
+
+function commitTag() {
+  const inp = document.getElementById('tagInputInline');
+  if (!inp) return;
+  const v = inp.value.trim();
+  if (v && !tags.includes(v)) { tags.push(v); onEditorChange(); }
+  renderTags();
+}
+
+function rmTag(i) { tags.splice(i, 1); renderTags(); onEditorChange(); }
+
+// ═══════════════ TOOLBAR INSERTIONS ═══════════════
+function insertMD(before, after, placeholder) {
+  const ta = document.getElementById('editor');
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  const sel = ta.value.substring(s, e);
+  ta.value = ta.value.substring(0, s) + before + (sel || placeholder) + after + ta.value.substring(e);
+  ta.focus();
+  if (!sel) ta.setSelectionRange(s + before.length, s + before.length + placeholder.length);
+  else ta.setSelectionRange(s + before.length + sel.length + after.length, s + before.length + sel.length + after.length);
+  onEditorChange();
+}
+
+function insertHeading(level) {
+  const ta = document.getElementById('editor');
+  const s = ta.selectionStart;
+  const ls = ta.value.lastIndexOf('\n', s - 1) + 1;
+  const prefix = '#'.repeat(level) + ' ';
+  ta.value = ta.value.substring(0, ls) + prefix + ta.value.substring(ls);
+  ta.focus(); ta.setSelectionRange(ls + prefix.length, ls + prefix.length);
+  onEditorChange();
+}
+
+function insertList(prefix) {
+  const ta = document.getElementById('editor');
+  const s = ta.selectionStart;
+  const ls = ta.value.lastIndexOf('\n', s - 1) + 1;
+  ta.value = ta.value.substring(0, ls) + prefix + ta.value.substring(ls);
+  ta.focus(); ta.setSelectionRange(ls + prefix.length, ls + prefix.length);
+  onEditorChange();
+}
+
+function insertBlock(type) {
+  const ta = document.getElementById('editor');
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  const sel = ta.value.substring(s, e);
+  let block = type === 'code'
+    ? '\n```\n' + (sel || '// 代码') + '\n```\n'
+    : '\n| 列 1 | 列 2 | 列 3 |\n| --- | --- | --- |\n|     |     |     |\n';
+  ta.value = ta.value.substring(0, s) + block + ta.value.substring(e);
+  ta.focus(); ta.setSelectionRange(s + block.length, s + block.length);
+  onEditorChange();
+}
+
+// ═══════════════ TAB ═══════════════
+function handleTab(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const ta = e.target, s = ta.selectionStart;
+    ta.value = ta.value.substring(0, s) + '  ' + ta.value.substring(ta.selectionEnd);
+    ta.focus(); ta.setSelectionRange(s + 2, s + 2);
+    onEditorChange();
+  }
+}
+
+// ═══════════════ FOCUS MODE ═══════════════
+function toggleFocus() {
+  focusMode = !focusMode;
+  document.body.classList.toggle('focus', focusMode);
+  document.getElementById('btnFocus').textContent = focusMode ? '退出专注' : '专注';
+  if (focusMode) showToast('专注模式 — 鼠标悬停可唤出面板');
+}
+
+// ═══════════════ PREVIEW ═══════════════
+function onEditorChange() {
+  refreshPreview();
+  updateStats();
+  updateOutline();
+  autoSave();
+}
+
+function refreshPreview() {
+  const content = document.getElementById('editor').value;
+  const preview = document.getElementById('preview');
+  if (!content.trim()) {
+    preview.innerHTML = '<div class="preview-empty"><span class="icon">¶</span><p>左侧书写，此处实时预览</p></div>';
+  } else {
+    preview.innerHTML = marked.parse(content);
+  }
+}
+
+function updateStats() {
+  const text = document.getElementById('editor').value.trim();
+  const chars = text.replace(/\s/g, '').length;
+  const paras = text ? text.split(/\n\n+/).filter(p => p.trim()).length : 0;
+  const readMin = Math.max(1, Math.ceil(chars / 500));
+  document.getElementById('wordCount').textContent = chars.toLocaleString();
+  document.getElementById('paraCount').textContent = paras;
+  document.getElementById('readTime').textContent = readMin;
+}
+
+// ═══════════════ OUTLINE ═══════════════
+function updateOutline() {
+  const content = document.getElementById('editor').value;
+  const headings = [...content.matchAll(/^(#{2,3})\s+(.+)$/gm)];
+  const container = document.getElementById('outlineBody');
+  if (headings.length === 0) {
+    container.innerHTML = '<div class="outline-empty">标题会出现在这里</div>';
+    return;
+  }
+  container.innerHTML = headings.map((m, i) => {
+    const level = m[1].length;
+    const text = esc(m[2]);
+    return `<a class="outline-item l${level}" onclick="jumpTo(${m.index})" title="${text}">${text}</a>`;
+  }).join('');
+}
+
+function jumpTo(index) {
+  const ta = document.getElementById('editor');
+  ta.focus(); ta.setSelectionRange(index, index);
+  const lineH = parseInt(getComputedStyle(ta).lineHeight) || 28;
+  const lineN = ta.value.substring(0, index).split('\n').length;
+  ta.scrollTop = (lineN - 3) * lineH;
+  syncOutline();
+}
+
+function syncOutline() {
+  const ta = document.getElementById('editor');
+  const content = ta.value;
+  const headings = [...content.matchAll(/^(#{2,3})\s+(.+)$/gm)];
+  const lineH = parseInt(getComputedStyle(ta).lineHeight) || 28;
+  let active = -1;
+  headings.forEach((m, i) => {
+    const ln = content.substring(0, m.index).split('\n').length;
+    if ((ln * lineH) < ta.scrollTop + 120) active = i;
+  });
+  document.querySelectorAll('.outline-item').forEach((el, i) => {
+    el.classList.toggle('active', i === active);
+  });
+}
+
+// ═══════════════ COPY ═══════════════
+async function copyMarkdown() {
+  const title = document.getElementById('titleInput').value.trim();
+  const content = document.getElementById('editor').value;
+  let md = '';
+  if (title) md += '# ' + title + '\n\n';
+  if (tags.length) md += '> 标签：' + tags.join('、') + '\n\n';
+  md += content;
+  await navigator.clipboard.writeText(md);
+  showToast('Markdown 已复制');
+}
+
+async function copyRichHTML() {
+  const title = document.getElementById('titleInput').value.trim();
+  const content = document.getElementById('editor').value;
+  let html = '';
+  if (title) html += '<h1>' + esc(title) + '</h1>\n';
+  if (tags.length) html += '<blockquote><p>标签：' + esc(tags.join('、')) + '</p></blockquote>\n';
+  html += marked.parse(content);
+  const blob = new Blob([html], { type: 'text/html' });
+  await navigator.clipboard.write([
+    new ClipboardItem({
+      'text/html': blob,
+      'text/plain': new Blob([stripHtml(html)], { type: 'text/plain' })
+    })
+  ]);
+  showToast('富文本已复制，可直接粘贴到公众号/知乎');
+}
+
+async function exportHTML() {
+  const title = document.getElementById('titleInput').value.trim() || '未命名';
+  const content = document.getElementById('editor').value;
+  let body = '';
+  if (title) body += '<h1>' + esc(title) + '</h1>\n';
+  if (tags.length) body += '<blockquote><p>标签：' + esc(tags.join('、')) + '</p></blockquote>\n';
+  body += marked.parse(content);
+
+  const full = '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>' + esc(title) + '</title>\n'
+    + '<style>body{max-width:680px;margin:60px auto;padding:0 24px;font-family:"Noto Serif SC",STSong,Georgia,serif;font-size:17px;line-height:1.9;color:#242424;}'
+    + 'h1{font-family:-apple-system,sans-serif;font-size:32px;font-weight:800;letter-spacing:-.4px;}'
+    + 'h2{font-family:-apple-system,sans-serif;font-size:22px;font-weight:700;margin:42px 0 14px;padding-bottom:10px;border-bottom:1px solid #ebeae6;}'
+    + 'h3{font-family:-apple-system,sans-serif;font-size:18px;font-weight:700;margin:30px 0 10px;}'
+    + 'code{background:#f5f5f2;padding:2px 6px;border-radius:3px;font-size:.88em;color:#c7254e;}'
+    + 'pre{background:#1a1a1e;color:#e0e0e0;padding:20px 24px;border-radius:8px;overflow-x:auto;font-size:14px;line-height:1.7;}'
+    + 'pre code{background:none;padding:0;color:inherit;}'
+    + 'blockquote{border-left:3px solid #d5d3ce;margin:20px 0;padding:8px 20px;color:#555;font-style:italic;}'
+    + 'img{max-width:100%;border-radius:6px;}'
+    + 'table{border-collapse:collapse;width:100%;}th,td{border:1px solid #e8e6e1;padding:10px 14px;}th{background:#fafaf7;}'
+    + 'a{color:#1a56db;}</style>\n</head>\n<body>\n' + body + '\n</body>\n</html>';
+
+  const blob = new Blob([full], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = title + '.html'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('HTML 文件已下载');
+}
+
+// ═══════════════ HELPERS ═══════════════
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function stripHtml(h) { const d = document.createElement('div'); d.innerHTML = h; return d.textContent || ''; }
+
+// ═══════════════ TOAST ═══════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ═══════════════ AUTO-SAVE ═══════════════
+function autoSave() {
+  localStorage.setItem('draft', JSON.stringify({
+    title: document.getElementById('titleInput').value,
+    tags: tags,
+    content: document.getElementById('editor').value,
+    templateId: currentTemplateId,
+    time: Date.now()
+  }));
+  const ind = document.getElementById('saveInd');
+  ind.classList.add('visible');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => ind.classList.remove('visible'), 1600);
+}
+
+function loadDraft() {
+  const raw = localStorage.getItem('draft');
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    if (!d.content && !d.title) return;
+    document.getElementById('titleInput').value = d.title || '';
+    document.getElementById('editor').value = d.content || '';
+    tags = d.tags || [];
+    currentTemplateId = d.templateId || null;
+    renderTags();
+    showEditor();
+    refreshPreview();
+    updateStats();
+    updateOutline();
+  } catch(e) { /* ignore corrupt data */ }
+}
+
+// ═══════════════ KEYBOARD ═══════════════
+document.addEventListener('keydown', function(e) {
+  if (currentView !== 'editor') return;
+  const mod = e.ctrlKey || e.metaKey;
+
+  if (mod && e.key === 's') { e.preventDefault(); autoSave(); showToast('已保存'); }
+  if (mod && e.key === 'b') { e.preventDefault(); insertMD('**', '**', '粗体'); }
+  if (mod && e.key === 'i') { e.preventDefault(); insertMD('*', '*', '斜体'); }
+  if (mod && e.key === 'k') { e.preventDefault(); insertMD('[', '](url)', ''); }
+  if (mod && e.key === '`') { e.preventDefault(); insertMD('`', '`', ''); }
+  if (mod && e.shiftKey && e.key === 'F') { e.preventDefault(); toggleFocus(); }
+  if (e.key === 'Escape' && focusMode) { e.preventDefault(); toggleFocus(); }
+});
+
+// ═══════════════ INIT ═══════════════
+renderGallery();
+renderHeaderActions();
+
+(function() {
+  var raw = localStorage.getItem('draft');
+  if (raw) {
+    try {
+      var d = JSON.parse(raw);
+      if ((d.content || d.title) && confirm('检测到上次未完成的草稿，是否恢复？')) {
+        loadDraft();
+      } else {
+        localStorage.removeItem('draft');
+      }
+    } catch(e) {}
+  }
+})();
+</script>
+</body>
+</html>

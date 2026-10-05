@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>闲鱼显卡商品数据 - 多月份价格趋势</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  color-scheme: light;
+  --surface-1:      #fcfcfb;
+  --surface-page:   #f9f9f7;
+  --text-primary:   #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted:     #898781;
+  --gridline:       #e1e0d9;
+  --baseline:       #c3c2b7;
+  --border-ring:    rgba(11,11,11,0.10);
+    --s1: #2a78d6; --s1-fill: #2a78d61a;
+    --s2: #eb6834; --s2-fill: #eb68341a;
+    --s3: #1baf7a; --s3-fill: #1baf7a1a;
+    --s4: #eda100; --s4-fill: #eda1001a;
+    --s5: #e87ba4; --s5-fill: #e87ba41a;
+    --s6: #008300; --s6-fill: #0083001a;
+    --s7: #4a3aa7; --s7-fill: #4a3aa71a;
+    --s8: #e34948; --s8-fill: #e349481a;
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --surface-page:   #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border-ring:    rgba(255,255,255,0.10);
+    --s1: #3987e5; --s1-fill: #3987e51a;
+    --s2: #d95926; --s2-fill: #d959261a;
+    --s3: #199e70; --s3-fill: #199e701a;
+    --s4: #c98500; --s4-fill: #c985001a;
+    --s5: #d55181; --s5-fill: #d551811a;
+    --s6: #008300; --s6-fill: #0083001a;
+    --s7: #9085e9; --s7-fill: #9085e91a;
+    --s8: #e66767; --s8-fill: #e667671a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1:      #1a1a19;
+  --surface-page:   #0d0d0d;
+  --text-primary:   #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted:     #898781;
+  --gridline:       #2c2c2a;
+  --baseline:       #383835;
+  --border-ring:    rgba(255,255,255,0.10);
+    --s1: #3987e5; --s1-fill: #3987e51a;
+    --s2: #d95926; --s2-fill: #d959261a;
+    --s3: #199e70; --s3-fill: #199e701a;
+    --s4: #c98500; --s4-fill: #c985001a;
+    --s5: #d55181; --s5-fill: #d551811a;
+    --s6: #008300; --s6-fill: #0083001a;
+    --s7: #9085e9; --s7-fill: #9085e91a;
+    --s8: #e66767; --s8-fill: #e667671a;
+}
+
+body {
+  background: var(--surface-page);
+  color: var(--text-primary);
+  padding: 32px 24px 64px;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  max-width: 1200px;
+  margin: 0 auto 32px;
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.header p {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ── Stat tiles ── */
+.stats-row {
+  max-width: 1200px;
+  margin: 0 auto 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.stat-tile {
+  background: var(--surface-1);
+  border: 1px solid var(--border-ring);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+.stat-tile .stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stat-tile .stat-value {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+.stat-tile .stat-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ── Chart section ── */
+.chart-section {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-ring);
+  border-radius: 8px;
+  padding: 24px;
+}
+.chart-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.chart-section .chart-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+/* ── Legend ── */
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-bottom: 16px;
+}
+.chart-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: opacity 0.15s;
+  user-select: none;
+}
+.chart-legend .legend-item.dimmed {
+  opacity: 0.35;
+}
+.chart-legend .legend-line {
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 380px;
+}
+.chart-container svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* tooltip */
+.chart-tooltip {
+  display: none;
+  position: absolute;
+  background: var(--surface-1);
+  border: 1px solid var(--border-ring);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  min-width: 160px;
+}
+.chart-tooltip .tt-month {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.chart-tooltip .tt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.chart-tooltip .tt-line {
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+.chart-tooltip .tt-model {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex: 1;
+}
+.chart-tooltip .tt-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── filter chips ── */
+.month-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.month-chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--border-ring);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  user-select: none;
+}
+.month-chip:hover {
+  background: var(--gridline);
+}
+.month-chip.active {
+  background: var(--s1);
+  color: #fff;
+  border-color: var(--s1);
+}
+
+/* ── Card grid ── */
+.card-section {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.card-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.card-section .card-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 12px;
+}
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-ring);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.15s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.card-img-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #f0efec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .card-img-wrap { background: #2c2c2a; }
+}
+:root[data-theme="dark"] .card-img-wrap { background: #2c2c2a; }
+.card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  padding: 10px;
+  background: linear-gradient(145deg, #f8f8f7, #ebecea);
+}
+.card-img-wrap .gpu-svg-fallback {
+  width: 100%;
+  height: 100%;
+}
+.card-img-wrap .gpu-svg-fallback svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.card-img-wrap .img-fallback {
+  color: var(--text-muted);
+  font-size: 48px;
+}
+.card-body {
+  padding: 12px 14px 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.card-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--s2);
+  line-height: 1;
+}
+.card-price::before {
+  content: '¥';
+  font-size: 13px;
+  font-weight: 500;
+}
+.card-month {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--gridline);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.card-model-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--s1);
+}
+.card-title {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-addr {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+}
+.card-addr::before {
+  content: '📍';
+  font-size: 11px;
+}
+
+/* ── Footer ── */
+.footer {
+  max-width: 1200px;
+  margin: 40px auto 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  body { padding: 16px 12px 48px; }
+  .header h1 { font-size: 22px; }
+  .stat-tile .stat-value { font-size: 22px; }
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .card-price { font-size: 18px; }
+  .chart-container { height: 280px; }
+  .chart-legend { gap: 2px 10px; }
+  .chart-legend .legend-item { font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <h1>闲鱼显卡商品数据 · 多月份价格趋势</h1>
+  <p>共 634 条商品数据，覆盖 2026年1月—7月，8 款热门显卡型号</p>
+</div>
+
+<!-- ── Stats ── -->
+<div class="stats-row">
+  <div class="stat-tile">
+    <div class="stat-label">商品总数</div>
+    <div class="stat-value">634</div>
+    <div class="stat-sub">条在售商品</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">数据覆盖</div>
+    <div class="stat-value">7个月</div>
+    <div class="stat-sub">2026年1月—7月</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">热门型号</div>
+    <div class="stat-value">8</div>
+    <div class="stat-sub">款显卡趋势追踪</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">整体均价</div>
+    <div class="stat-value">¥1900.0</div>
+    <div class="stat-sub">全部商品均价</div>
+  </div>
+</div>
+
+<!-- ── Trend chart ── -->
+<div class="chart-section">
+  <h2>热门显卡月度价格趋势</h2>
+  <p class="chart-subtitle">各型号在 1月—7月 期间的平均售价走势</p>
+  <div class="chart-legend" id="chartLegend"></div>
+  <div class="chart-container" id="chartContainer">
+    <svg id="trendChart"></svg>
+  </div>
+  <div class="chart-tooltip" id="chartTooltip">
+    <div class="tt-month"></div>
+    <div id="ttRows"></div>
+  </div>
+</div>
+
+<!-- ── Card grid ── -->
+<div class="card-section">
+  <h2>商品列表</h2>
+  <div class="month-filters" id="monthFilters">
+    <span class="month-chip active" data-month="all">全部</span>
+  </div>
+  <p class="card-subtitle" id="cardSubtitle">共 634 件显卡商品</p>
+  <div class="card-grid" id="cardGrid"></div>
+</div>
+
+<div class="footer">
+  数据来源：闲鱼 + 模拟生成 · 仅供学习参考
+</div>
+
+<script>
+// ── Data ──
+const ALL_DATA = [{"addr": "湖南", "price": 6160.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-01"}, {"addr": "安徽", "price": 1480.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-02"}, {"addr": "江西", "price": 430.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-06"}, {"addr": "重庆", "price": 2920.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-06"}, {"addr": "福建", "price": 1490.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-02"}, {"addr": "浙江", "price": 810.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-03"}, {"addr": "河北", "price": 3050.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-02"}, {"addr": "湖北", "price": 210.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-01"}, {"addr": "浙江", "price": 480.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-02"}, {"addr": "上海", "price": 300.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-04"}, {"addr": "北京", "price": 3710.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-04"}, {"addr": "湖北", "price": 280.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-04"}, {"addr": "辽宁", "price": 4030.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-03"}, {"addr": "江苏", "price": 1390.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-05"}, {"addr": "上海", "price": 890.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-06"}, {"addr": "北京", "price": 410.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-06"}, {"addr": "广东", "price": 2170.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-02"}, {"addr": "浙江", "price": 410.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-02"}, {"addr": "广西", "price": 870.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-04"}, {"addr": "湖北", "price": 1480.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-06"}, {"addr": "福建", "price": 870.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-06"}, {"addr": "四川", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-06"}, {"addr": "河北", "price": 2980.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-05"}, {"addr": "湖南", "price": 3100.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-01"}, {"addr": "湖北", "price": 3250.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-06"}, {"addr": "福建", "price": 290.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-03"}, {"addr": "广西", "price": 480.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-06"}, {"addr": "江苏", "price": 1466.0, "img": "http://img.alicdn.com/bao/uploaded/i2/2215931603576/O1CN01Q5V7gL1cHrUEO9LRq_!!4611686018427382392-0-xy_item.jpg", "title": "七彩虹战斧RTX3060Ti DUO V2 LHR 8G显卡 ，红黑配色，双风扇散热，接口齐全（HDMI、DP、DVI），性能稳定，插上即用。成色还可以，外观有点使用痕迹，具体看图。风扇正常，无异响，功能完好，无拆无修。包邮，苏州可自提。", "model": "RTX 3060 Ti", "month": "2026-07"}, {"addr": "辽宁", "price": 270.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-01"}, {"addr": "天津", "price": 490.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-04"}, {"addr": "江苏", "price": 2590.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-03"}, {"addr": "山东", "price": 470.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-05"}, {"addr": "重庆", "price": 1660.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-01"}, {"addr": "陕西", "price": 450.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-03"}, {"addr": "浙江", "price": 1580.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-02"}, {"addr": "湖南", "price": 1500.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-01"}, {"addr": "湖南", "price": 1540.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-02"}, {"addr": "山东", "price": 1510.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-04"}, {"addr": "山东", "price": 2390.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-04"}, {"addr": "四川", "price": 3880.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-05"}, {"addr": "上海", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-05"}, {"addr": "广西", "price": 230.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-03"}, {"addr": "陕西", "price": 1630.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-02"}, {"addr": "浙江", "price": 450.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-02"}, {"addr": "广西", "price": 310.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-06"}, {"addr": "河南", "price": 790.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-01"}, {"addr": "重庆", "price": 1510.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-04"}, {"addr": "湖北", "price": 2510.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-03"}, {"addr": "安徽", "price": 2230.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-01"}, {"addr": "湖南", "price": 520.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-01"}, {"addr": "福建", "price": 310.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-06"}, {"addr": "江苏", "price": 6570.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-06"}, {"addr": "上海", "price": 1670.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-01"}, {"addr": "湖南", "price": 2790.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-04"}, {"addr": "山东", "price": 450.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-02"}, {"addr": "江西", "price": 1460.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-02"}, {"addr": "北京", "price": 2.0, "img": "http://img.alicdn.com/bao/uploaded/i3/O1CN01MD1uwc1uuwI5bSyRB_!!4611686018427381778-0-fleamarket.jpg", "title": "二手显卡性价比前100排名 [hot]这是一个图片文档，不是卖显卡 包含显存、功耗、能耗比、发布时间、游戏性能等详细参数。辅助您购买显卡时进行决策参考。 避免你买二手显卡花冤枉钱。  拍下即渡盘发高清大图，方便查看。  [hot]电子资源容易复制，一旦售出不退不换，...", "model": "其他", "month": "2026-07"}, {"addr": "天津", "price": 280.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-02"}, {"addr": "江苏", "price": 420.0, "img": "http://img.alicdn.com/bao/uploaded/i1/1030138640/O1CN01mMPOL82DhBADC7eOS_!!4611686018427382544-0-xy_item.jpg", "title": "技嘉GTX1050ti 4g显卡，拆机下来的，成色还行，有点 使用痕迹，风扇正常，接口齐全，HDMI能用，没拆修，功能正常。适合游戏和办公。自提，可邮寄。", "model": "GTX 1050 Ti", "month": "2026-07"}, {"addr": "安徽", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-02"}, {"addr": "福建", "price": 700.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-05"}, {"addr": "河南", "price": 2340.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-06"}, {"addr": "福建", "price": 2300.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-06"}, {"addr": "河南", "price": 6340.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-01"}, {"addr": "安徽", "price": 6299.0, "img": "http://img.alicdn.com/bao/uploaded/i1/3298938196/O1CN01t4lHij2APpJIzPf90_!!4611686018427383124-0-xy_item.jpg", "title": "全新技嘉RTX5070魔鹰显卡 全新未拆封国行 可个人送保 全新未拆封产品不退不刀", "model": "RTX 5070", "month": "2026-07"}, {"addr": "重庆", "price": 3750.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-01"}, {"addr": "广东", "price": 1400.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-06"}, {"addr": "江西", "price": 4210.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-06"}, {"addr": "广东", "price": 340.0, "img": "http://img.alicdn.com/bao/uploaded/i4/2214379798558/O1CN01mX3wK52D5cgcFygx6_!!4611686018427379742-0-xy_item.jpg", "title": "七彩虹gtx1060 3g显卡 显卡hdmi接口坏的dvi dp正常其他没问题正常使用包邮不议价", "model": "GTX 1060", "month": "2026-07"}, {"addr": "陕西", "price": 280.0, "img": "http://img.alicdn.com/bao/uploaded/i1/198565015/O1CN01U6D3Xk1muvPzQd4PC_!!4611686018427387031-0-xy_item.jpg", "title": "AMD RX550 4G半高刀卡，拆机卡，成色还可以，外观很 新，风扇叶片完整，金手指干净，功能正常没修过。适合小机箱办公、轻度娱乐，插上即用。包邮，支持自提，价格可聊，需要细节图私聊。一共6张一起出 单张280", "model": "RX 550", "month": "2026-07"}, {"addr": "江苏", "price": 270.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-01"}, {"addr": "河南", "price": 4020.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-05"}, {"addr": "浙江", "price": 450.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-01"}, {"addr": "上海", "price": 800.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-05"}, {"addr": "江西", "price": 1620.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-02"}, {"addr": "河北", "price": 330.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-03"}, {"addr": "北京", "price": 1420.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-06"}, {"addr": "江苏", "price": 330.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-04"}, {"addr": "辽宁", "price": 6100.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-02"}, {"addr": "河北", "price": 1370.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-01"}, {"addr": "江西", "price": 300.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-06"}, {"addr": "四川", "price": 2390.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-06"}, {"addr": "河北", "price": 320.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-04"}, {"addr": "湖南", "price": 1500.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-04"}, {"addr": "北京", "price": 2710.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-02"}, {"addr": "天津", "price": 2570.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-01"}, {"addr": "浙江", "price": 1580.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-03"}, {"addr": "广西", "price": 430.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-03"}, {"addr": "福建", "price": 2600.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-01"}, {"addr": "广东", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-06"}, {"addr": "河北", "price": 1800.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-05"}, {"addr": "江苏", "price": 3720.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-02"}, {"addr": "山东", "price": 1620.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-05"}, {"addr": "河北", "price": 1690.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-04"}, {"addr": "陕西", "price": 790.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-04"}, {"addr": "江西", "price": 3270.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-02"}, {"addr": "河南", "price": 2700.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-04"}, {"addr": "湖北", "price": 210.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-06"}, {"addr": "天津", "price": 3990.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-06"}, {"addr": "安徽", "price": 2540.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-03"}, {"addr": "上海", "price": 220.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-01"}, {"addr": "天津", "price": 510.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-05"}, {"addr": "江西", "price": 2290.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-03"}, {"addr": "广东", "price": 490.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-06"}, {"addr": "江西", "price": 2960.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-06"}, {"addr": "江西", "price": 240.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-02"}, {"addr": "浙江", "price": 2270.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-02"}, {"addr": "浙江", "price": 1740.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-04"}, {"addr": "山东", "price": 270.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-02"}, {"addr": "山东", "price": 1740.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-02"}, {"addr": "山东", "price": 230.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-05"}, {"addr": "广东", "price": 2469.0, "img": "http://img.alicdn.com/bao/uploaded/i3/4217356879/O1CN01v1ripV20gdgxBgJtX_!!4611686018427380303-0-xy_item.jpg", "title": "出一块七彩虹战斧 GeForce RTX 5060 DUO 8GB显卡红黑双风扇，8G显存，接口齐全，支持光追和DLSS，性能稳定成色几乎全新，外观很新，无明显使用痕迹无拆无修，功能正常，插上即用支持同城自提，外地可邮寄价格可聊，喜欢直接拍，细节私聊二手物品售出不退", "model": "RTX 5060", "month": "2026-07"}, {"addr": "浙江", "price": 360.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-02"}, {"addr": "湖南", "price": 6020.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-04"}, {"addr": "北京", "price": 1710.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-05"}, {"addr": "安徽", "price": 850.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-04"}, {"addr": "辽宁", "price": 330.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-01"}, {"addr": "河南", "price": 250.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-03"}, {"addr": "安徽", "price": 1690.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-05"}, {"addr": "浙江", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-02"}, {"addr": "天津", "price": 1520.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-03"}, {"addr": "重庆", "price": 3850.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-03"}, {"addr": "江苏", "price": 450.0, "img": "http://img.alicdn.com/bao/uploaded/i1/1030138640/O1CN015GvYeq2DhBADTHHyb_!!4611686018427382544-0-xy_item.jpg", "title": "影驰GTX1050Ti 4G显卡，双风扇，128bit，4G 显存，HDMI/DVI/DP接口，PCI-E 3.0 16X，拆机下来的，成色还可以，有点使用痕迹，功能正常，无拆无修。", "model": "GTX 1050 Ti", "month": "2026-07"}, {"addr": "河南", "price": 310.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-06"}, {"addr": "辽宁", "price": 3860.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-01"}, {"addr": "广西", "price": 310.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-02"}, {"addr": "河南", "price": 2870.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-04"}, {"addr": "江苏", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-06"}, {"addr": "北京", "price": 1820.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-04"}, {"addr": "陕西", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-02"}, {"addr": "河南", "price": 280.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-05"}, {"addr": "湖南", "price": 2260.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-05"}, {"addr": "湖南", "price": 220.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-06"}, {"addr": "上海", "price": 560.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-03"}, {"addr": "天津", "price": 350.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-05"}, {"addr": "广西", "price": 350.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-06"}, {"addr": "安徽", "price": 340.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-02"}, {"addr": "重庆", "price": 2910.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-04"}, {"addr": "山东", "price": 845.0, "img": "http://img.alicdn.com/bao/uploaded/i2/2216611913329/O1CN01zjRRBC1aSjesavDcB_!!4611686018427387505-0-xy_item.jpg", "title": "蓝戟GUNNIR Intel Arc AA750 Index 8G显卡8G显存，双风扇，金属背板，接口齐全升级拆机，成色还可以，有点使用痕迹，具体看图还在电脑上，功能正常，无拆无修，没有原包装，插上就能用包邮，可自提喜欢直接拍，细节私聊", "model": "其他", "month": "2026-07"}, {"addr": "浙江", "price": 290.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-03"}, {"addr": "广西", "price": 2180.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-06"}, {"addr": "湖北", "price": 280.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-03"}, {"addr": "辽宁", "price": 300.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-01"}, {"addr": "北京", "price": 1660.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-06"}, {"addr": "浙江", "price": 1520.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-05"}, {"addr": "河南", "price": 1560.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-06"}, {"addr": "湖北", "price": 1610.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-02"}, {"addr": "河北", "price": 340.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-03"}, {"addr": "上海", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-04"}, {"addr": "上海", "price": 2720.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-05"}, {"addr": "北京", "price": 6310.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-02"}, {"addr": "广东", "price": 430.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-04"}, {"addr": "四川", "price": 400.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-04"}, {"addr": "湖南", "price": 1560.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-02"}, {"addr": "浙江", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-02"}, {"addr": "河北", "price": 320.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-01"}, {"addr": "北京", "price": 1630.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-01"}, {"addr": "广西", "price": 2310.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-05"}, {"addr": "浙江", "price": 3630.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-02"}, {"addr": "四川", "price": 780.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-06"}, {"addr": "上海", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-03"}, {"addr": "湖北", "price": 1890.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-06"}, {"addr": "陕西", "price": 3120.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-06"}, {"addr": "陕西", "price": 1420.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-01"}, {"addr": "四川", "price": 2820.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-01"}, {"addr": "福建", "price": 1680.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-03"}, {"addr": "辽宁", "price": 1680.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-02"}, {"addr": "北京", "price": 1700.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-02"}, {"addr": "河南", "price": 14.0, "img": "http://img.alicdn.com/bao/uploaded/i4/861065326/O1CN011I2Esg1pDMZABfNER_!!4611686018427383918-53-xy_item.heic", "title": "全新七彩虹3050 3060TI 3070 3080 Ult ra W OC显卡挡板拍前核对好 售出不换不退。。", "model": "RTX 3070", "month": "2026-07"}, {"addr": "山东", "price": 760.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-04"}, {"addr": "广东", "price": 3830.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-05"}, {"addr": "江苏", "price": 3300.0, "img": "http://img.alicdn.com/bao/uploaded/i4/822784728/O1CN01GnuYT71knTkpXJ1GS_!!4611686018427384536-0-xy_item.jpg", "title": "几乎全新盈通RTX5060Ti 8G D7豪华版 三风扇，8G显存，GDDR7，性能强劲，游戏办公都能用功能正常，无维修，插上即用包邮，最好本地自提不刀喜欢直接拍，细节私聊 有原盒买来只打过英雄联盟满载温度70，在保。", "model": "RTX 5060 Ti", "month": "2026-07"}, {"addr": "湖北", "price": 2280.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-04"}, {"addr": "湖南", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-03"}, {"addr": "四川", "price": 300.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-05"}, {"addr": "辽宁", "price": 3880.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-01"}, {"addr": "山东", "price": 310.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-03"}, {"addr": "江苏", "price": 1600.0, "img": "http://img.alicdn.com/bao/uploaded/i2/573955991/O1CN01fiuiVu1u7vzA1XX3O_!!4611686018427387799-0-xy_item.jpg", "title": "华硕ROG STRIX RTX3060Ti-O8G-GAMI NG猛禽  V2版本   8G显存原盒原码 成色如图  三风扇设计 支持光追DLSS 性能稳定 插上即用功能正常 刚换过硅脂  顺丰到付需要的联系，支持置换，置换优先出", "model": "RTX 3060 Ti", "month": "2026-07"}, {"addr": "陕西", "price": 310.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-02"}, {"addr": "陕西", "price": 2270.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-02"}, {"addr": "陕西", "price": 300.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-06"}, {"addr": "广东", "price": 420.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-01"}, {"addr": "四川", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-04"}, {"addr": "天津", "price": 250.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-01"}, {"addr": "江西", "price": 2590.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-03"}, {"addr": "陕西", "price": 890.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-06"}, {"addr": "山东", "price": 1530.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-05"}, {"addr": "北京", "price": 480.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-03"}, {"addr": "湖南", "price": 230.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-01"}, {"addr": "广东", "price": 4000.0, "img": "http://img.alicdn.com/bao/uploaded/i2/3271622406/O1CN015K9G8j1Te05XcvUxf_!!4611686018427387654-0-xy_item.jpg", "title": "瀚铠VASTARMOR RX9070XT 16G星空 显卡 三风扇散热 16G GDDR6显存3DP+1HDMI接口 性能强劲9.9新  功能正常   个人原因升级显卡换下来的，没原盒，有内盒4100包邮 售出不退不换需要细节图私聊", "model": "RX 9070 XT", "month": "2026-07"}, {"addr": "陕西", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-06"}, {"addr": "重庆", "price": 340.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-05"}, {"addr": "湖南", "price": 6130.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-01"}, {"addr": "江苏", "price": 1370.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-01"}, {"addr": "山东", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-01"}, {"addr": "四川", "price": 2330.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-05"}, {"addr": "天津", "price": 360.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-05"}, {"addr": "山东", "price": 470.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-05"}, {"addr": "天津", "price": 810.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-02"}, {"addr": "河南", "price": 2180.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-03"}, {"addr": "北京", "price": 2360.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-06"}, {"addr": "陕西", "price": 2950.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-06"}, {"addr": "山东", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-01"}, {"addr": "江苏", "price": 1450.0, "img": "http://img.alicdn.com/bao/uploaded/i2/2214424262806/O1CN01V5cKRU1WbCW3DqRRL_!!4611686018427386006-0-xy_item.jpg", "title": "耕升RTX3070Ti 8G显卡 稳定使用 接口全好 实物图 实物视频 发货前测试发货 有任何问题退货运费自理 不接受的勿拍。", "model": "RTX 3070 Ti", "month": "2026-07"}, {"addr": "天津", "price": 210.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-03"}, {"addr": "湖南", "price": 490.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-02"}, {"addr": "上海", "price": 1470.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-05"}, {"addr": "浙江", "price": 1840.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-03"}, {"addr": "江西", "price": 2740.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-04"}, {"addr": "湖北", "price": 2900.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-01"}, {"addr": "河北", "price": 2678.0, "img": "http://img.alicdn.com/bao/uploaded/i2/2217549141764/O1CN01KCvBkF1OtxocDCLqr_!!4611686018427385604-0-xy_item.jpg", "title": "RTX5060七彩虹战斧豪华版8G内存 几乎全新，今年在七彩虹官方店购买，到手后搭配oculink显卡坞，很少使用；原包装盒都在。发货前会拍显卡正常使用的视频；拒绝到手刀，签收请录开箱视频，售出不退不换。", "model": "RTX 5060", "month": "2026-07"}, {"addr": "浙江", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-04"}, {"addr": "广西", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-04"}, {"addr": "浙江", "price": 6210.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-06"}, {"addr": "安徽", "price": 320.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-02"}, {"addr": "山东", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-01"}, {"addr": "北京", "price": 490.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-01"}, {"addr": "天津", "price": 2740.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-04"}, {"addr": "四川", "price": 2090.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-02"}, {"addr": "山东", "price": 750.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-05"}, {"addr": "陕西", "price": 690.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-02"}, {"addr": "河北", "price": 760.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-05"}, {"addr": "湖南", "price": 310.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-03"}, {"addr": "江苏", "price": 1520.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-01"}, {"addr": "辽宁", "price": 6260.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-05"}, {"addr": "天津", "price": 280.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-01"}, {"addr": "安徽", "price": 2688.0, "img": "http://img.alicdn.com/bao/uploaded/i1/2555480604/O1CN01nqiGmt1GKgNZ1w8KL_!!4611686018427382300-0-xy_item.jpg", "title": "七彩虹 5060 AD OC 8G显卡 原盒原码成色充新功能正常详情看图有意联系记者勿扰包邮江浙沪皖主页帖子有整机说明可供参考所有配件测试无问题才会上架！放心购买！本店所售硬件均为个人一手拆机件，快递到达后请当面仔细查看是否描述一致，如果有问题请及时联系。确认收货后还请各位老板能及时收货给好评。小店小本生意还需资金周转，还望理解！也请各位老板给个好评支持下！谢谢了，祝各位老板日进斗金！本店铺发货时间为上午8至下午4点之前，4.30之后确定无法正常发出，因为在乡镇非市区！望理解！关于小白装机问题，因为本店铺回收电脑均是个人一手车，都是经测试无问题才会上架售卖的，如果安装过程中遇到不懂的请及时联系，我可以协助你装机。还请不要一上来就说东西有问题，本店诚信经营童叟无欺！没必要卖有问题的东西浪费运费钱，浪费个人信誉，还望各位老板理解！", "model": "RTX 5060", "month": "2026-07"}, {"addr": "湖南", "price": 270.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-03"}, {"addr": "四川", "price": 40.0, "img": "http://img.alicdn.com/bao/uploaded/i3/1752150510/O1CN01XN4NHU1Fdd9Dc9Av9_!!4611686018427384302-0-xy_item.jpg", "title": "盈通GT240显卡，1G显存，拆机下来的，成色还可以，有点使 用痕迹，具体看图～接口齐全：HDMI、DVI、VGA都在，PCI-E插槽，风扇正常，没修过，按拆机件出，", "model": "GT 240", "month": "2026-07"}, {"addr": "广西", "price": 1680.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-01"}, {"addr": "四川", "price": 2820.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-05"}, {"addr": "北京", "price": 330.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-03"}, {"addr": "江西", "price": 780.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-04"}, {"addr": "重庆", "price": 1500.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-03"}, {"addr": "江西", "price": 1600.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-01"}, {"addr": "福建", "price": 1640.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-02"}, {"addr": "上海", "price": 3700.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-01"}, {"addr": "河南", "price": 240.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-05"}, {"addr": "江西", "price": 4020.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-04"}, {"addr": "广西", "price": 1540.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-05"}, {"addr": "安徽", "price": 210.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-06"}, {"addr": "福建", "price": 830.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-06"}, {"addr": "江西", "price": 6070.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-01"}, {"addr": "上海", "price": 720.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-04"}, {"addr": "北京", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-06"}, {"addr": "陕西", "price": 3080.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-05"}, {"addr": "天津", "price": 1790.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-04"}, {"addr": "湖北", "price": 1460.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-01"}, {"addr": "江苏", "price": 260.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-02"}, {"addr": "山东", "price": 3297.0, "img": "http://img.alicdn.com/bao/uploaded/i2/2207161105495/O1CN01oBrIHQ1qSlXLYvh14_!!4611686018427386967-0-xy_item.jpg", "title": "电竞叛客AX GAMING RTX 5060Ti显卡8g显存 6月20号在闲鱼买的全新未拆封的，上机仅仅一个月，成色很新，还没拆下来白色款，带灯效，功能正常包邮，支持自提，喜欢直接拍", "model": "RTX 5060 Ti", "month": "2026-07"}, {"addr": "江苏", "price": 1610.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-06"}, {"addr": "陕西", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-02"}, {"addr": "四川", "price": 840.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-04"}, {"addr": "天津", "price": 6450.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-06"}, {"addr": "广东", "price": 2700.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-01"}, {"addr": "河南", "price": 580.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-06"}, {"addr": "山东", "price": 300.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-05"}, {"addr": "江苏", "price": 350.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-05"}, {"addr": "四川", "price": 1480.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-02"}, {"addr": "湖北", "price": 350.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-03"}, {"addr": "浙江", "price": 420.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-05"}, {"addr": "四川", "price": 78.0, "img": "http://img.alicdn.com/bao/uploaded/i1/523893994/O1CN01cwNSuW1fNJ2a7Ibhy_!!4611686018427387114-0-xy_item.jpg", "title": "自用一手蓝宝石SAPPHIRE HD7770 GHz Edi tion显卡，1GD5，接口齐全（HDMI、DVI、DP），6pin供电。成色还可以，有点使用痕迹，功能正常。送DVI转VGA接头一个，发货前可发当天使用视频。包邮非边远地区，售出不退。", "model": "HD 7770", "month": "2026-07"}, {"addr": "湖北", "price": 1500.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-01"}, {"addr": "天津", "price": 750.0, "img": "http://img.alicdn.com/bao/uploaded/i2/4263765867/O1CN01IAD2iS1tD8sDaEOso_!!4611686018427381611-0-xy_item.jpg", "title": "处理一片微星GTX1660-6g显卡，特别新，个人使用，75 0元", "model": "GTX 1660", "month": "2026-07"}, {"addr": "湖南", "price": 410.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-01"}, {"addr": "上海", "price": 440.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-03"}, {"addr": "河南", "price": 460.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-04"}, {"addr": "广东", "price": 750.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-02"}, {"addr": "福建", "price": 220.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-01"}, {"addr": "辽宁", "price": 350.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-06"}, {"addr": "北京", "price": 1620.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-05"}, {"addr": "福建", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-04"}, {"addr": "辽宁", "price": 2320.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-03"}, {"addr": "重庆", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-05"}, {"addr": "安徽", "price": 6090.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-02"}, {"addr": "北京", "price": 730.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-04"}, {"addr": "河南", "price": 2910.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-01"}, {"addr": "湖南", "price": 1660.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-05"}, {"addr": "广西", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-03"}, {"addr": "湖北", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-01"}, {"addr": "江西", "price": 1550.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-02"}, {"addr": "湖北", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-06"}, {"addr": "陕西", "price": 2150.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-01"}, {"addr": "辽宁", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-04"}, {"addr": "湖南", "price": 2680.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-02"}, {"addr": "浙江", "price": 2930.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-04"}, {"addr": "四川", "price": 1350.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-01"}, {"addr": "辽宁", "price": 1780.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-06"}, {"addr": "重庆", "price": 1600.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-04"}, {"addr": "安徽", "price": 1360.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-03"}, {"addr": "重庆", "price": 870.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-05"}, {"addr": "上海", "price": 690.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-01"}, {"addr": "辽宁", "price": 760.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-06"}, {"addr": "四川", "price": 300.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-06"}, {"addr": "河南", "price": 740.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-03"}, {"addr": "湖北", "price": 410.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-02"}, {"addr": "湖南", "price": 740.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-06"}, {"addr": "辽宁", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-05"}, {"addr": "广东", "price": 840.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-02"}, {"addr": "上海", "price": 3590.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-01"}, {"addr": "江西", "price": 2800.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-05"}, {"addr": "陕西", "price": 310.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-02"}, {"addr": "广西", "price": 470.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-02"}, {"addr": "福建", "price": 1500.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-03"}, {"addr": "上海", "price": 2790.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-06"}, {"addr": "广西", "price": 270.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-01"}, {"addr": "福建", "price": 1560.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-06"}, {"addr": "江苏", "price": 2699.0, "img": "http://img.alicdn.com/bao/uploaded/i3/2214783441064/O1CN01Pcl9D51JjMZMoFjMq_!!4611686018427386024-0-xy_item.jpg", "title": "万丽RTX 5060星云显卡 8G显存 全新未拆封 正品保证 带原包装盒支持DLSS4 光追 Reflex Studio性能强劲 游戏设计剪辑都能用 插上即用渠道货 支持个人送保价格可聊 喜欢直接拍", "model": "RTX 5060", "month": "2026-07"}, {"addr": "河南", "price": 340.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-04"}, {"addr": "广东", "price": 3360.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-05"}, {"addr": "湖南", "price": 230.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-03"}, {"addr": "福建", "price": 470.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-01"}, {"addr": "陕西", "price": 330.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-05"}, {"addr": "江西", "price": 280.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-02"}, {"addr": "山东", "price": 290.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-01"}, {"addr": "北京", "price": 2780.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-02"}, {"addr": "广东", "price": 460.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-06"}, {"addr": "陕西", "price": 1750.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-04"}, {"addr": "湖南", "price": 200.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-04"}, {"addr": "重庆", "price": 280.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-01"}, {"addr": "河南", "price": 3560.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-01"}, {"addr": "湖南", "price": 730.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-01"}, {"addr": "广西", "price": 6510.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-04"}, {"addr": "福建", "price": 2280.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-06"}, {"addr": "江苏", "price": 730.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-02"}, {"addr": "山东", "price": 910.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-06"}, {"addr": "浙江", "price": 2910.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-02"}, {"addr": "河南", "price": 2850.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-05"}, {"addr": "山东", "price": 2800.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-01"}, {"addr": "广东", "price": 1580.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-02"}, {"addr": "湖南", "price": 1830.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-05"}, {"addr": "浙江", "price": 2660.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-04"}, {"addr": "江西", "price": 2600.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-01"}, {"addr": "北京", "price": 300.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-05"}, {"addr": "辽宁", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-04"}, {"addr": "湖北", "price": 275.0, "img": "http://img.alicdn.com/bao/uploaded/i2/2705545921/O1CN01WOp8NK1tbsGEqjmpl_!!4611686018427386561-0-xy_item.jpg", "title": "讯景XFX RX560 4G显卡，双红扇，接口齐全（HDMI 、DVI、DP），自家电脑拆机下来的，无维修成色还可以，有点使用痕迹，功能正常，插上就能用，适合办公、轻度游戏、老机器升级。支持自提，喜欢直接拍或者私聊我.", "model": "RX 560", "month": "2026-07"}, {"addr": "湖南", "price": 540.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-06"}, {"addr": "湖北", "price": 1540.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-04"}, {"addr": "广西", "price": 860.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-03"}, {"addr": "重庆", "price": 260.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-03"}, {"addr": "四川", "price": 6330.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-03"}, {"addr": "重庆", "price": 1700.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-06"}, {"addr": "河南", "price": 2700.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-01"}, {"addr": "重庆", "price": 210.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-06"}, {"addr": "广西", "price": 520.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-01"}, {"addr": "陕西", "price": 1490.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-03"}, {"addr": "河北", "price": 3980.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-04"}, {"addr": "湖南", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-03"}, {"addr": "河南", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-03"}, {"addr": "湖北", "price": 400.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-01"}, {"addr": "辽宁", "price": 3020.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-01"}, {"addr": "河南", "price": 1530.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-04"}, {"addr": "陕西", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-04"}, {"addr": "山东", "price": 340.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-04"}, {"addr": "上海", "price": 740.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-04"}, {"addr": "山东", "price": 440.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-01"}, {"addr": "湖南", "price": 3150.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-03"}, {"addr": "广西", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-01"}, {"addr": "广西", "price": 4210.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-06"}, {"addr": "江苏", "price": 5970.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-02"}, {"addr": "上海", "price": 420.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-04"}, {"addr": "安徽", "price": 2740.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-03"}, {"addr": "四川", "price": 220.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-05"}, {"addr": "广东", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-06"}, {"addr": "河南", "price": 2240.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-01"}, {"addr": "山东", "price": 560.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-05"}, {"addr": "重庆", "price": 1470.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-04"}, {"addr": "北京", "price": 260.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-01"}, {"addr": "安徽", "price": 3870.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-03"}, {"addr": "辽宁", "price": 6170.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-03"}, {"addr": "江苏", "price": 1820.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-04"}, {"addr": "北京", "price": 6170.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-01"}, {"addr": "广东", "price": 1710.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-04"}, {"addr": "湖北", "price": 320.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-05"}, {"addr": "浙江", "price": 230.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-05"}, {"addr": "江苏", "price": 1599.0, "img": "http://img.alicdn.com/bao/uploaded/i4/2215541660404/O1CN01YcTANb1Er5ALlnhGl_!!4611686018427386612-0-xy_item.jpg", "title": "七彩虹 iGame RTX 3060 Ti Ultra W OC G6X 白色8G显存 支持光追成色几乎全新 带原盒功能正常 无拆无修鲁大师跑分正常仅自提 不议价 二手物品非质量问题不退", "model": "RTX 3060 Ti", "month": "2026-07"}, {"addr": "辽宁", "price": 260.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-01"}, {"addr": "湖南", "price": 560.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-06"}, {"addr": "安徽", "price": 490.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-01"}, {"addr": "安徽", "price": 900.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-03"}, {"addr": "河北", "price": 1590.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-04"}, {"addr": "江西", "price": 2270.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-05"}, {"addr": "天津", "price": 1450.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-02"}, {"addr": "安徽", "price": 1580.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-02"}, {"addr": "北京", "price": 2900.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-04"}, {"addr": "重庆", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-02"}, {"addr": "江西", "price": 1690.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-05"}, {"addr": "山东", "price": 430.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-06"}, {"addr": "重庆", "price": 330.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-02"}, {"addr": "河北", "price": 1610.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-03"}, {"addr": "重庆", "price": 240.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-06"}, {"addr": "四川", "price": 2640.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-06"}, {"addr": "四川", "price": 220.0, "img": "http://img.alicdn.com/bao/uploaded/i2/2218851411006/O1CN01U5SbDn1JInb3Bp1hr_!!4611686018427380798-0-xy_item.jpg", "title": "华硕gt1030，在电脑城被商家坑了，换新显卡后就把这张卡卖 了，官网可正常下驱动，不是黄伟达。爽快拍送hkc鼠标垫", "model": "GT 1030", "month": "2026-07"}, {"addr": "湖南", "price": 210.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-02"}, {"addr": "河南", "price": 780.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-02"}, {"addr": "江苏", "price": 1680.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-04"}, {"addr": "浙江", "price": 230.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-05"}, {"addr": "安徽", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-05"}, {"addr": "湖北", "price": 230.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-03"}, {"addr": "广西", "price": 360.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-05"}, {"addr": "江西", "price": 490.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-05"}, {"addr": "重庆", "price": 540.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-05"}, {"addr": "江西", "price": 730.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-06"}, {"addr": "福建", "price": 1770.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-04"}, {"addr": "安徽", "price": 1580.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-01"}, {"addr": "河南", "price": 290.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-02"}, {"addr": "陕西", "price": 1710.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-03"}, {"addr": "陕西", "price": 2540.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-01"}, {"addr": "北京", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-05"}, {"addr": "天津", "price": 4150.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-05"}, {"addr": "辽宁", "price": 1590.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-04"}, {"addr": "湖北", "price": 230.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-03"}, {"addr": "湖北", "price": 490.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-03"}, {"addr": "河北", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-05"}, {"addr": "广西", "price": 3860.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-03"}, {"addr": "安徽", "price": 3980.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-05"}, {"addr": "陕西", "price": 520.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-04"}, {"addr": "江苏", "price": 1520.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-03"}, {"addr": "陕西", "price": 850.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-02"}, {"addr": "广东", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-01"}, {"addr": "广东", "price": 310.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-02"}, {"addr": "河南", "price": 870.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-04"}, {"addr": "安徽", "price": 350.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-06"}, {"addr": "辽宁", "price": 450.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-03"}, {"addr": "天津", "price": 450.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-06"}, {"addr": "湖南", "price": 1530.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-02"}, {"addr": "广东", "price": 980.0, "img": "http://img.alicdn.com/bao/uploaded/i4/2209739296380/O1CN01hkh8Iu1x063TMsVlE_!!4611686018427383420-0-xy_item.jpg", "title": "出2070s耕升8G显卡，7月1号线下买的，带不动2k 20 0hz屏幕了，换4060最好自提，可以当面跑分测试价格可聊，喜欢私聊", "model": "RTX 2070 Super", "month": "2026-07"}, {"addr": "陕西", "price": 220.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-05"}, {"addr": "江苏", "price": 1590.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-04"}, {"addr": "福建", "price": 1480.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-06"}, {"addr": "陕西", "price": 420.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-05"}, {"addr": "江西", "price": 6350.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-01"}, {"addr": "上海", "price": 1570.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-04"}, {"addr": "四川", "price": 1750.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-06"}, {"addr": "重庆", "price": 280.0, "img": "http://img.alicdn.com/bao/uploaded/i3/1854032957/O1CN01TZfM9m1XiMJwyxanE_!!4611686018427382845-0-xy_item.jpg", "title": "出一个翔升 RX 550 4G 显卡闲置出～ 成色不用说，功能全好，没修过，插上就能用4G显存，性能稳定，打游戏、办公都很OK自用升级换下，低价转让，喜欢的宝子直接拍～细节私聊，随时在线电脑配件", "model": "RX 550", "month": "2026-07"}, {"addr": "陕西", "price": 270.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-01"}, {"addr": "江西", "price": 890.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-03"}, {"addr": "河北", "price": 300.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-05"}, {"addr": "广西", "price": 1790.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-01"}, {"addr": "河北", "price": 310.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-03"}, {"addr": "山东", "price": 1510.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-03"}, {"addr": "河北", "price": 1550.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-06"}, {"addr": "北京", "price": 6060.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-01"}, {"addr": "广东", "price": 830.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-04"}, {"addr": "上海", "price": 3390.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-04"}, {"addr": "陕西", "price": 450.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-02"}, {"addr": "辽宁", "price": 360.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-03"}, {"addr": "湖南", "price": 730.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-06"}, {"addr": "北京", "price": 1710.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-03"}, {"addr": "陕西", "price": 540.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-03"}, {"addr": "浙江", "price": 280.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-04"}, {"addr": "上海", "price": 310.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-04"}, {"addr": "湖北", "price": 3970.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-04"}, {"addr": "上海", "price": 310.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-02"}, {"addr": "广西", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-02"}, {"addr": "湖南", "price": 1490.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-04"}, {"addr": "河南", "price": 240.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-04"}, {"addr": "陕西", "price": 340.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-04"}, {"addr": "辽宁", "price": 3840.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-04"}, {"addr": "湖北", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-02"}, {"addr": "上海", "price": 1600.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-06"}, {"addr": "陕西", "price": 1500.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-03"}, {"addr": "浙江", "price": 280.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-03"}, {"addr": "河北", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-03"}, {"addr": "安徽", "price": 200.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-02"}, {"addr": "河南", "price": 6010.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-02"}, {"addr": "四川", "price": 840.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-02"}, {"addr": "山东", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-02"}, {"addr": "浙江", "price": 810.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-01"}, {"addr": "陕西", "price": 3090.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-04"}, {"addr": "河北", "price": 850.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-03"}, {"addr": "浙江", "price": 3220.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-05"}, {"addr": "北京", "price": 2840.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-02"}, {"addr": "江苏", "price": 2300.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-02"}, {"addr": "广西", "price": 3020.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-03"}, {"addr": "河南", "price": 6280.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-05"}, {"addr": "广西", "price": 2640.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-05"}, {"addr": "辽宁", "price": 2890.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-03"}, {"addr": "浙江", "price": 730.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-01"}, {"addr": "湖北", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-05"}, {"addr": "安徽", "price": 710.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-01"}, {"addr": "四川", "price": 300.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-06"}, {"addr": "天津", "price": 820.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-01"}, {"addr": "四川", "price": 1780.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-06"}, {"addr": "广西", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-03"}, {"addr": "河北", "price": 310.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-03"}, {"addr": "河南", "price": 2500.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-01"}, {"addr": "山东", "price": 460.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-03"}, {"addr": "广东", "price": 3840.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-01"}, {"addr": "北京", "price": 6180.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-06"}, {"addr": "北京", "price": 320.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-03"}, {"addr": "湖南", "price": 470.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-05"}, {"addr": "浙江", "price": 5960.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-02"}, {"addr": "河南", "price": 460.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-02"}, {"addr": "湖北", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-03"}, {"addr": "福建", "price": 1820.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-04"}, {"addr": "浙江", "price": 850.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-05"}, {"addr": "湖北", "price": 1750.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-05"}, {"addr": "浙江", "price": 270.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-01"}, {"addr": "湖北", "price": 1680.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-01"}, {"addr": "河南", "price": 770.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-06"}, {"addr": "四川", "price": 1510.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-05"}, {"addr": "广东", "price": 5860.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-02"}, {"addr": "浙江", "price": 1610.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-06"}, {"addr": "天津", "price": 1610.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-05"}, {"addr": "江苏", "price": 4100.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-06"}, {"addr": "北京", "price": 220.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-02"}, {"addr": "天津", "price": 2970.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-06"}, {"addr": "陕西", "price": 6670.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-05"}, {"addr": "辽宁", "price": 750.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-04"}, {"addr": "重庆", "price": 1390.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-03"}, {"addr": "福建", "price": 3370.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-06"}, {"addr": "山东", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-06"}, {"addr": "四川", "price": 360.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-05"}, {"addr": "安徽", "price": 1830.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-05"}, {"addr": "重庆", "price": 480.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-03"}, {"addr": "辽宁", "price": 40.0, "img": "http://img.alicdn.com/bao/uploaded/i2/34034805/O1CN0167TtZs1lMkD5ciPH3_!!4611686018427384949-53-xy_item.heic", "title": "翔升9800GT金刚军团显卡，512M DDR3显存，双风扇 散热，铜管设计，接口齐全，支持DVI和VGA输出，S端子，老电视输出。个人自用拆机，功能正常无拆修，二手物品售出不退换。", "model": "9800 GT", "month": "2026-07"}, {"addr": "河北", "price": 230.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-04"}, {"addr": "北京", "price": 2820.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-05"}, {"addr": "安徽", "price": 830.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-02"}, {"addr": "陕西", "price": 740.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-03"}, {"addr": "重庆", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-06"}, {"addr": "广西", "price": 760.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-05"}, {"addr": "上海", "price": 270.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-03"}, {"addr": "安徽", "price": 3080.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-04"}, {"addr": "广东", "price": 330.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-05"}, {"addr": "四川", "price": 299.0, "img": "http://img.alicdn.com/bao/uploaded/i2/1574891186/O1CN01HWrV1z1KdEUm58Xmt_!!1574891186.jpg", "title": "白牌RX580 4g显卡，22年8月淘宝买的，花了三百多。双 风扇，散热很稳，单HDMI接口，2048SP，鲁大师跑分15万+，打游戏、办公都OK，吃鸡也能带。基本没怎么用，成色挺新，闲置出。支持包邮，也可以自提，喜欢直接拍，诚心要可聊，细节私信问我～", "model": "RX 580", "month": "2026-07"}, {"addr": "重庆", "price": 740.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-06"}, {"addr": "江西", "price": 5990.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-02"}, {"addr": "江苏", "price": 290.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-05"}, {"addr": "湖北", "price": 3180.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-03"}, {"addr": "北京", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-04"}, {"addr": "辽宁", "price": 220.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-02"}, {"addr": "河北", "price": 1620.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-05"}, {"addr": "广西", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-02"}, {"addr": "北京", "price": 2210.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-02"}, {"addr": "北京", "price": 1820.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-06"}, {"addr": "陕西", "price": 860.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-05"}, {"addr": "河北", "price": 210.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-02"}, {"addr": "安徽", "price": 910.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-04"}, {"addr": "重庆", "price": 2840.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-06"}, {"addr": "上海", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-06"}, {"addr": "广东", "price": 4080.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-05"}, {"addr": "福建", "price": 1670.0, "img": "", "title": "RTX 3060 显卡 闲鱼二手", "model": "RTX 3060", "month": "2026-04"}, {"addr": "辽宁", "price": 2280.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-04"}, {"addr": "河北", "price": 1460.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-01"}, {"addr": "广西", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-01"}, {"addr": "北京", "price": 1460.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-06"}, {"addr": "河南", "price": 20.0, "img": "http://img.alicdn.com/bao/uploaded/i4/O1CN01eRMFFj1QVo68rsKLX_!!4611686018427387150-0-fleamarket.jpg", "title": "一手换下来的都是可以正常使用的 包含i33240     航 嘉额定230w   和  一个机箱 售出不退不换 显卡已出。 附近20自提全部打包 需要邮寄的45全出，邮费比较贵", "model": "其他", "month": "2026-07"}, {"addr": "江苏", "price": 6010.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-06"}, {"addr": "重庆", "price": 310.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-05"}, {"addr": "河北", "price": 1570.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-03"}, {"addr": "湖北", "price": 6090.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-03"}, {"addr": "重庆", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-02"}, {"addr": "浙江", "price": 840.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-02"}, {"addr": "安徽", "price": 420.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-05"}, {"addr": "湖北", "price": 3940.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-04"}, {"addr": "河南", "price": 2780.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-04"}, {"addr": "安徽", "price": 720.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-05"}, {"addr": "安徽", "price": 280.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-03"}, {"addr": "河北", "price": 2840.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-05"}, {"addr": "四川", "price": 220.0, "img": "", "title": "GT 1030 显卡 闲鱼二手", "model": "GT 1030", "month": "2026-05"}, {"addr": "广西", "price": 530.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-04"}, {"addr": "湖北", "price": 480.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-06"}, {"addr": "重庆", "price": 730.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-02"}, {"addr": "广西", "price": 340.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-02"}, {"addr": "天津", "price": 390.0, "img": "", "title": "GTX 1050 Ti 显卡 闲鱼二手", "model": "GTX 1050 Ti", "month": "2026-04"}, {"addr": "安徽", "price": 780.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-04"}, {"addr": "河北", "price": 330.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-02"}, {"addr": "辽宁", "price": 3800.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-02"}, {"addr": "福建", "price": 3170.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-04"}, {"addr": "天津", "price": 6180.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-04"}, {"addr": "安徽", "price": 560.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-05"}, {"addr": "河北", "price": 1720.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-02"}, {"addr": "山东", "price": 6240.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-05"}, {"addr": "湖北", "price": 3060.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-05"}, {"addr": "江西", "price": 290.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-05"}, {"addr": "湖北", "price": 280.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-03"}, {"addr": "上海", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-01"}, {"addr": "浙江", "price": 1790.0, "img": "", "title": "RTX 4060 显卡 闲鱼二手", "model": "RTX 4060", "month": "2026-02"}, {"addr": "福建", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-02"}, {"addr": "上海", "price": 320.0, "img": "", "title": "GTX 1060 显卡 闲鱼二手", "model": "GTX 1060", "month": "2026-03"}, {"addr": "福建", "price": 710.0, "img": "", "title": "GTX 1660 显卡 闲鱼二手", "model": "GTX 1660", "month": "2026-04"}, {"addr": "湖南", "price": 270.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-02"}, {"addr": "福建", "price": 1580.0, "img": "", "title": "RTX 3060 Ti 显卡 闲鱼二手", "model": "RTX 3060 Ti", "month": "2026-02"}, {"addr": "广西", "price": 800.0, "img": "", "title": "Arc A750 显卡 闲鱼二手", "model": "Arc A750", "month": "2026-02"}, {"addr": "安徽", "price": 2800.0, "img": "", "title": "RTX 5060 显卡 闲鱼二手", "model": "RTX 5060", "month": "2026-01"}, {"addr": "河南", "price": 6300.0, "img": "", "title": "RTX 5070 显卡 闲鱼二手", "model": "RTX 5070", "month": "2026-01"}, {"addr": "山东", "price": 2240.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-05"}, {"addr": "安徽", "price": 2880.0, "img": "", "title": "RTX 5060 Ti 显卡 闲鱼二手", "model": "RTX 5060 Ti", "month": "2026-02"}, {"addr": "河北", "price": 280.0, "img": "", "title": "RX 550 显卡 闲鱼二手", "model": "RX 550", "month": "2026-06"}, {"addr": "天津", "price": 530.0, "img": "", "title": "其他 显卡 闲鱼二手", "model": "其他", "month": "2026-03"}, {"addr": "湖南", "price": 2310.0, "img": "", "title": "RTX 4060 Ti 显卡 闲鱼二手", "model": "RTX 4060 Ti", "month": "2026-05"}, {"addr": "广东", "price": 1500.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-02"}, {"addr": "江西", "price": 3000.0, "img": "http://img.alicdn.com/bao/uploaded/i4/2215924767141/O1CN01blOQmx22cdSeOljv7_!!4611686018427386277-0-xy_item.jpg", "title": "七彩虹5060战斧豪华版三风扇，99新，7月15号买的，10 天左右，用的极少，加起来应该不到20个小时。包装盒配件都在。", "model": "其他", "month": "2026-07"}, {"addr": "上海", "price": 270.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-04"}, {"addr": "江西", "price": 290.0, "img": "", "title": "RX 560 显卡 闲鱼二手", "model": "RX 560", "month": "2026-02"}, {"addr": "天津", "price": 300.0, "img": "", "title": "RX 580 显卡 闲鱼二手", "model": "RX 580", "month": "2026-02"}, {"addr": "河北", "price": 3960.0, "img": "", "title": "RX 9070 XT 显卡 闲鱼二手", "model": "RX 9070 XT", "month": "2026-02"}, {"addr": "湖南", "price": 1380.0, "img": "", "title": "RTX 3070 Ti 显卡 闲鱼二手", "model": "RTX 3070 Ti", "month": "2026-02"}, {"addr": "河南", "price": 8360.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-01"}, {"addr": "安徽", "price": 8230.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-01"}, {"addr": "北京", "price": 8170.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-01"}, {"addr": "重庆", "price": 7950.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-02"}, {"addr": "河南", "price": 8340.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-02"}, {"addr": "福建", "price": 8270.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-02"}, {"addr": "重庆", "price": 8040.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-02"}, {"addr": "河南", "price": 8100.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-02"}, {"addr": "广东", "price": 8100.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-02"}, {"addr": "江苏", "price": 8300.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-02"}, {"addr": "河北", "price": 8240.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-03"}, {"addr": "陕西", "price": 8400.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-03"}, {"addr": "天津", "price": 8380.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-03"}, {"addr": "湖北", "price": 8350.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-03"}, {"addr": "陕西", "price": 8410.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-03"}, {"addr": "辽宁", "price": 8000.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-03"}, {"addr": "天津", "price": 7990.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-04"}, {"addr": "江西", "price": 8230.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-04"}, {"addr": "河南", "price": 8330.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-04"}, {"addr": "北京", "price": 8340.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-05"}, {"addr": "辽宁", "price": 8650.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-05"}, {"addr": "湖北", "price": 8080.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-05"}, {"addr": "江苏", "price": 8040.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-05"}, {"addr": "天津", "price": 8510.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-05"}, {"addr": "北京", "price": 8490.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-06"}, {"addr": "江苏", "price": 8600.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-06"}, {"addr": "浙江", "price": 8300.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-06"}, {"addr": "辽宁", "price": 8420.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-06"}, {"addr": "河南", "price": 8390.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-06"}, {"addr": "四川", "price": 8950.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-07"}, {"addr": "河北", "price": 8510.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-07"}, {"addr": "辽宁", "price": 8550.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-07"}, {"addr": "河北", "price": 8480.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-07"}, {"addr": "江西", "price": 8640.0, "img": "", "title": "RTX 5080 显卡 闲鱼二手", "model": "RTX 5080", "month": "2026-07"}];
+const TREND_MODELS = ["RTX 5080", "RTX 5070", "RTX 5060 Ti", "RTX 5060", "RTX 3060 Ti", "RX 580", "RX 560", "RX 550"];
+const TREND_DATA = [{"model": "RTX 5080", "points": [{"label": "1月", "avg": 8253}, {"label": "2月", "avg": 8157}, {"label": "3月", "avg": 8297}, {"label": "4月", "avg": 8183}, {"label": "5月", "avg": 8324}, {"label": "6月", "avg": 8440}, {"label": "7月", "avg": 8626}]}, {"model": "RTX 5070", "points": [{"label": "1月", "avg": 6198}, {"label": "2月", "avg": 6036}, {"label": "3月", "avg": 6197}, {"label": "4月", "avg": 6237}, {"label": "5月", "avg": 6362}, {"label": "6月", "avg": 6284}, {"label": "7月", "avg": 6299}]}, {"model": "RTX 5060 Ti", "points": [{"label": "1月", "avg": 2908}, {"label": "2月", "avg": 2978}, {"label": "3月", "avg": 2996}, {"label": "4月", "avg": 3067}, {"label": "5月", "avg": 3140}, {"label": "6月", "avg": 3247}, {"label": "7月", "avg": 3298}]}, {"model": "RTX 5060", "points": [{"label": "1月", "avg": 2639}, {"label": "2月", "avg": 2743}, {"label": "3月", "avg": 2558}, {"label": "4月", "avg": 2754}, {"label": "5月", "avg": 2784}, {"label": "6月", "avg": 2867}, {"label": "7月", "avg": 2634}]}, {"model": "RTX 3060 Ti", "points": [{"label": "1月", "avg": 1458}, {"label": "2月", "avg": 1550}, {"label": "3月", "avg": 1516}, {"label": "4月", "avg": 1536}, {"label": "5月", "avg": 1563}, {"label": "6月", "avg": 1553}, {"label": "7月", "avg": 1555}]}, {"model": "RX 580", "points": [{"label": "1月", "avg": 280}, {"label": "2月", "avg": 300}, {"label": "3月", "avg": 290}, {"label": "4月", "avg": 308}, {"label": "5月", "avg": 302}, {"label": "6月", "avg": 302}, {"label": "7月", "avg": 299}]}, {"model": "RX 560", "points": [{"label": "1月", "avg": 274}, {"label": "2月", "avg": 271}, {"label": "3月", "avg": 276}, {"label": "4月", "avg": 280}, {"label": "5月", "avg": 293}, {"label": "6月", "avg": 293}, {"label": "7月", "avg": 275}]}, {"model": "RX 550", "points": [{"label": "1月", "avg": 274}, {"label": "2月", "avg": 279}, {"label": "3月", "avg": 279}, {"label": "4月", "avg": 287}, {"label": "5月", "avg": 293}, {"label": "6月", "avg": 293}, {"label": "7月", "avg": 280}]}];
+const MONTHS = ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07"];
+const MONTH_LABELS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月"];
+const PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
+
+// ── Render month filter chips ──
+(function() {
+  const container = document.getElementById('monthFilters');
+  const allChip = container.querySelector('[data-month="all"]');
+  allChip.addEventListener('click', () => filterCards('all', allChip));
+  const uniqueMonths = [...new Set(ALL_DATA.map(d => d.month))].sort();
+  uniqueMonths.forEach((m, i) => {
+    const label = MONTH_LABELS[MONTHS.indexOf(m)] || m;
+    const chip = document.createElement('span');
+    chip.className = 'month-chip';
+    chip.dataset.month = m;
+    chip.textContent = label;
+    chip.addEventListener('click', () => filterCards(m, chip));
+    container.appendChild(chip);
+  });
+})();
+
+let activeMonth = 'all';
+function filterCards(month, chipEl) {
+  activeMonth = month;
+  document.querySelectorAll('.month-chip').forEach(c => c.classList.remove('active'));
+  chipEl.classList.add('active');
+  renderCards();
+}
+
+// ── Render cards ──
+// ── Generate GPU card SVG by model ──
+function getGpuSvg(model) {
+  const COLOR_MAP = {"RTX 5080":"var(--s1)","RTX 5070":"var(--s2)","RTX 5060 Ti":"var(--s3)","RTX 5060":"var(--s4)","RTX 3060 Ti":"var(--s5)","RX 580":"var(--s6)","RX 560":"var(--s7)","RX 550":"var(--s8)"};
+  const color = COLOR_MAP[model] || '#888';
+  let fn = 1;
+  if (model.includes('5080') || model.includes('5070')) fn = 3;
+  else if (model.includes('5060') || model.includes('3060')) fn = 2;
+
+  function fanSvg(cx, cy, r) {
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#0d0d1a" stroke="#2a2a3a" stroke-width="1.5"/>'
+      +'<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.7)+'" fill="none" stroke="#1a1a2e" stroke-width="'+(r*0.3)+'"/>'
+      +'<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.15)+'" fill="#333"/>'
+      +'<line x1="'+cx+'" y1="'+(cy-r+2)+'" x2="'+cx+'" y2="'+(cy+r-2)+'" stroke="#222" stroke-width="1.5"/>'
+      +'<line x1="'+(cx-r+2)+'" y1="'+cy+'" x2="'+(cx+r-2)+'" y2="'+cy+'" stroke="#222" stroke-width="1.5"/>'
+      +'<line x1="'+(cx-r*0.7)+'" y1="'+(cy-r*0.7)+'" x2="'+(cx+r*0.7)+'" y2="'+(cy+r*0.7)+'" stroke="#222" stroke-width="1"/>'
+      +'<line x1="'+(cx+r*0.7)+'" y1="'+(cy-r*0.7)+'" x2="'+(cx-r*0.7)+'" y2="'+(cy+r*0.7)+'" stroke="#222" stroke-width="1"/>';
+  }
+
+  var fansSvg = '';
+  if (fn === 3) {
+    fansSvg = fanSvg(40,118,26) + fanSvg(100,118,26) + fanSvg(160,118,26);
+  } else if (fn === 2) {
+    fansSvg = fanSvg(65,118,32) + fanSvg(135,118,32);
+  } else {
+    fansSvg = fanSvg(100,115,38);
+  }
+
+  var id = model.replace(/\s/g,'');
+  return '<svg viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">'
+    +'<defs>'
+    +'<linearGradient id="pcb-'+id+'" x1="0" y1="0" x2="1" y2="1">'
+    +'<stop offset="0%" stop-color="#1e1e30"/><stop offset="100%" stop-color="#141428"/>'
+    +'</linearGradient>'
+    +'<linearGradient id="pcie-'+id+'" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#d4b896"/><stop offset="100%" stop-color="#a08060"/>'
+    +'</linearGradient>'
+    +'</defs>'
+    +'<rect x="12" y="20" width="176" height="175" rx="8" fill="url(#pcb-'+id+')" stroke="#2c2c3e" stroke-width="1.5"/>'
+    +'<rect x="12" y="20" width="176" height="6" rx="3" fill="'+color+'" opacity="0.5"/>'
+    +'<rect x="46" y="185" width="108" height="14" rx="2" fill="url(#pcie-'+id+')"/>'
+    +'<line x1="52" y1="188" x2="148" y2="188" stroke="#8a6d4b" stroke-width="0.5"/>'
+    +'<line x1="52" y1="191" x2="148" y2="191" stroke="#8a6d4b" stroke-width="0.5"/>'
+    +'<line x1="52" y1="194" x2="148" y2="194" stroke="#8a6d4b" stroke-width="0.5"/>'
+    +'<rect x="4" y="20" width="10" height="50" rx="2" fill="#888" opacity="0.4"/>'
+    +'<rect x="85" y="26" width="30" height="4" rx="1" fill="#444" opacity="0.5"/>'
+    +'<rect x="150" y="32" width="20" height="8" rx="1" fill="#333" stroke="#444" stroke-width="0.5"/>'
+    +'<line x1="30" y1="50" x2="90" y2="50" stroke="#2a3a5a" stroke-width="0.8"/>'
+    +'<line x1="30" y1="56" x2="70" y2="56" stroke="#2a3a5a" stroke-width="0.6"/>'
+    +'<line x1="110" y1="50" x2="170" y2="50" stroke="#2a3a5a" stroke-width="0.8"/>'
+    +'<line x1="120" y1="56" x2="170" y2="56" stroke="#2a3a5a" stroke-width="0.6"/>'
+    +'<circle cx="30" cy="50" r="1.5" fill="'+color+'" opacity="0.6"/>'
+    +'<circle cx="170" cy="50" r="1.5" fill="'+color+'" opacity="0.6"/>'
+    +'<rect x="20" y="70" width="16" height="10" rx="1" fill="#1a1a2e" stroke="#2a2a3a" stroke-width="0.5"/>'
+    +'<rect x="40" y="70" width="16" height="10" rx="1" fill="#1a1a2e" stroke="#2a2a3a" stroke-width="0.5"/>'
+    +'<rect x="144" y="70" width="16" height="10" rx="1" fill="#1a1a2e" stroke="#2a2a3a" stroke-width="0.5"/>'
+    +'<rect x="164" y="70" width="16" height="10" rx="1" fill="#1a1a2e" stroke="#2a2a3a" stroke-width="0.5"/>'
+    +fansSvg
+    +'<rect x="58" y="168" width="84" height="16" rx="3" fill="'+color+'" opacity="0.12"/>'
+    +'<text x="100" y="180" text-anchor="middle" fill="'+color+'" font-size="10" font-weight="700" font-family="system-ui, sans-serif">'+model+'</text>'
+    +'</svg>';
+}
+
+
+// ── Generate GPU card SVG by model ──
+function getGpuSvg(model) {
+  const COLOR_MAP = {"RTX 5080":"var(--s1)","RTX 5070":"var(--s2)","RTX 5060 Ti":"var(--s3)","RTX 5060":"var(--s4)","RTX 3060 Ti":"var(--s5)","RX 580":"var(--s6)","RX 560":"var(--s7)","RX 550":"var(--s8)"};
+  const color = COLOR_MAP[model] || '#888';
+  let fn = 1;
+  if (model.includes('5080') || model.includes('5070')) fn = 3;
+  else if (model.includes('5060') || model.includes('3060')) fn = 2;
+
+  function fanSvg(cx, cy, r) {
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#0d0d1a" stroke="#2a2a3a" stroke-width="1.5"/>'
+      +'<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.7)+'" fill="none" stroke="#1a1a2e" stroke-width="'+(r*0.3)+'"/>'
+      +'<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.15)+'" fill="#333"/>'
+      +'<line x1="'+cx+'" y1="'+(cy-r+2)+'" x2="'+cx+'" y2="'+(cy+r-2)+'" stroke="#222" stroke-width="1.5"/>'
+      +'<line x1="'+(cx-r+2)+'" y1="'+cy+'" x2="'+(cx+r-2)+'" y2="'+cy+'" stroke="#222" stroke-width="1.5"/>'
+      +'<line x1="'+(cx-r*0.7)+'" y1="'+(cy-r*0.7)+'" x2="'+(cx+r*0.7)+'" y2="'+(cy+r*0.7)+'" stroke="#222" stroke-width="1"/>'
+      +'<line x1="'+(cx+r*0.7)+'" y1="'+(cy-r*0.7)+'" x2="'+(cx-r*0.7)+'" y2="'+(cy+r*0.7)+'" stroke="#222" stroke-width="1"/>';
+  }
+
+  var fansSvg = '';
+  if (fn === 3) {
+    fansSvg = fanSvg(40,118,26) + fanSvg(100,118,26) + fanSvg(160,118,26);
+  } else if (fn === 2) {
+    fansSvg = fanSvg(65,118,32) + fanSvg(135,118,32);
+  } else {
+    fansSvg = fanSvg(100,115,38);
+  }
+
+  var id = model.replace(/\s/g,'');
+  return '<svg viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">'
+    +'<defs>'
+    +'<linearGradient id="pcb-'+id+'" x1="0" y1="0" x2="1" y2="1">'
+    +'<stop offset="0%" stop-color="#1e1e30"/><stop offset="100%" stop-color="#141428"/>'
+    +'</linearGradient>'
+    +'<linearGradient id="pcie-'+id+'" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#d4b896"/><stop offset="100%" stop-color="#a08060"/>'
+    +'</linearGradient>'
+    +'</defs>'
+    +'<rect x="12" y="20" width="176" height="175" rx="8" fill="url(#pcb-'+id+')" stroke="#2c2c3e" stroke-width="1.5"/>'
+    +'<rect x="12" y="20" width="176" height="6" rx="3" fill="'+color+'" opacity="0.5"/>'
+    +'<rect x="46" y="185" width="108" height="14" rx="2" fill="url(#pcie-'+id+')"/>'
+    +'<line x1="52" y1="188" x2="148" y2="188" stroke="#8a6d4b" stroke-width="0.5"/>'
+    +'<line x1="52" y1="191" x2="148" y2="191" stroke="#8a6d4b" stroke-width="0.5"/>'
+    +'<line x1="52" y1="194" x2="148" y2="194" stroke="#8a6d4b" stroke-width="0.5"/>'
+    +'<rect x="4" y="20" width="10" height="50" rx="2" fill="#888" opacity="0.4"/>'
+    +'<rect x="85" y="26" width="30" height="4" rx="1" fill="#444" opacity="0.5"/>'
+    +'<rect x="150" y="32" width="20" height="8" rx="1" fill="#333" stroke="#444" stroke-width="0.5"/>'
+    +'<line x1="30" y1="50" x2="90" y2="50" stroke="#2a3a5a" stroke-width="0.8"/>'
+    +'<line x1="30" y1="56" x2="70" y2="56" stroke="#2a3a5a" stroke-width="0.6"/>'
+    +'<line x1="110" y1="50" x2="170" y2="50" stroke="#2a3a5a" stroke-width="0.8"/>'
+    +'<line x1="120" y1="56" x2="170" y2="56" stroke="#2a3a5a" stroke-width="0.6"/>'
+    +'<circle cx="30" cy="50" r="1.5" fill="'+color+'" opacity="0.6"/>'
+    +'<circle cx="170" cy="50" r="1.5" fill="'+color+'" opacity="0.6"/>'
+    +'<rect x="20" y="70" width="16" height="10" rx="1" fill="#1a1a2e" stroke="#2a2a3a" stroke-width="0.5"/>'
+    +'<rect x="40" y="70" width="16" height="10" rx="1" fill="#1a1a2e" stroke="#2a2a3a" stroke-width="0.5"/>'
+    +'<rect x="144" y="70" width="16" height="10" rx="1" fill="#1a1a2e" stroke="#2a2a3a" stroke-width="0.5"/>'
+    +'<rect x="164" y="70" width="16" height="10" rx="1" fill="#1a1a2e" stroke="#2a2a3a" stroke-width="0.5"/>'
+    +fansSvg
+    +'<rect x="58" y="168" width="84" height="16" rx="3" fill="'+color+'" opacity="0.12"/>'
+    +'<text x="100" y="180" text-anchor="middle" fill="'+color+'" font-size="10" font-weight="700" font-family="system-ui, sans-serif">'+model+'</text>'
+    +'</svg>';
+}
+
+
+// Model-specific card artwork: each tracked GPU gets a distinct cooler design.
+function getGpuSvg(model) {
+  const presets = {
+    'RTX 5080':    { accent:'#78f7c5', body:'#20272a', edge:'#9aa5a8', fans:[38,100,162], shape:'cut', badge:'GEFORCE RTX' },
+    'RTX 5070':    { accent:'#9cff57', body:'#17231a', edge:'#45634a', fans:[42,100,158], shape:'flat', badge:'RTX 5070' },
+    'RTX 5060 Ti': { accent:'#56c8ff', body:'#152335', edge:'#315876', fans:[64,136], shape:'angle', badge:'TWIN EDGE' },
+    'RTX 5060':    { accent:'#b86cff', body:'#251831', edge:'#603f73', fans:[62,138], shape:'cut', badge:'DUAL OC' },
+    'RTX 3060 Ti': { accent:'#ffd35a', body:'#2d2920', edge:'#75683c', fans:[60,140], shape:'flat', badge:'3060 Ti' },
+    'RX 580':      { accent:'#ff554f', body:'#321817', edge:'#743630', fans:[58,142], shape:'angle', badge:'RADEON RX' },
+    'RX 560':      { accent:'#ff8d42', body:'#302017', edge:'#795033', fans:[100], shape:'cut', badge:'RX 560' },
+    'RX 550':      { accent:'#f15fa8', body:'#301a27', edge:'#763d5d', fans:[100], shape:'flat', badge:'LOW PROFILE' }
+  };
+  const p = presets[model] || { accent:'#9aa4b2', body:'#20242c', edge:'#4b5563', fans:[60,140], shape:'flat', badge:model };
+  const id = 'gpu-' + model.replace(/[^a-z0-9]/gi, '');
+  const outline = p.shape === 'cut'
+    ? 'M18 31 L42 18 H177 L190 42 V171 L173 190 H22 L10 174 V48 Z'
+    : p.shape === 'angle'
+      ? 'M12 42 L32 20 H180 L190 32 V178 L177 191 H24 L10 177 Z'
+      : 'M12 25 Q12 18 20 18 H180 Q188 18 188 26 V181 Q188 190 179 190 H21 Q12 190 12 181 Z';
+  const fan = (cx, r) => {
+    let blades = '';
+    for (let i = 0; i < 8; i++) blades += '<path d="M'+cx+' 110 C'+(cx+8)+' 91 '+(cx+23)+' 91 '+(cx+26)+' 98 C'+(cx+15)+' 101 '+(cx+10)+' 108 '+cx+' 116Z" fill="#46505a" opacity=".72" transform="rotate('+(i*45)+' '+cx+' 116)"/>';
+    return '<circle cx="'+cx+'" cy="116" r="'+r+'" fill="#090c10" stroke="'+p.accent+'" stroke-opacity=".45" stroke-width="2"/>'+blades+'<circle cx="'+cx+'" cy="116" r="8" fill="'+p.accent+'"/><circle cx="'+cx+'" cy="116" r="3" fill="#111"/>';
+  };
+  const radius = p.fans.length === 1 ? 42 : p.fans.length === 2 ? 34 : 27;
+  return '<svg viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">'
+    +'<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1"><stop stop-color="'+p.body+'"/><stop offset="1" stop-color="#090d13"/></linearGradient></defs>'
+    +'<path d="'+outline+'" fill="url(#'+id+')" stroke="'+p.edge+'" stroke-width="2"/>'
+    +'<path d="M20 42 H180" stroke="'+p.accent+'" stroke-width="5" stroke-linecap="round"/>'
+    +'<path d="M24 54 H176" stroke="'+p.edge+'" stroke-width="1" opacity=".65"/>'
+    +p.fans.map(x => fan(x, radius)).join('')
+    +'<rect x="43" y="188" width="114" height="11" rx="2" fill="#c9a45d"/><path d="M50 191 H150" stroke="#73572e" stroke-dasharray="3 3"/>'
+    +'<rect x="4" y="47" width="10" height="74" rx="2" fill="#8b9299"/><rect x="6" y="58" width="6" height="10" fill="#20242a"/><rect x="6" y="75" width="6" height="10" fill="#20242a"/>'
+    +'<rect x="53" y="158" width="94" height="21" rx="5" fill="#080b10" stroke="'+p.accent+'" stroke-opacity=".35"/>'
+    +'<text x="100" y="172" text-anchor="middle" fill="'+p.accent+'" font-size="9.5" font-weight="800" font-family="system-ui,sans-serif" letter-spacing="1">'+p.badge+'</text>'
+    +'</svg>';
+}
+
+// Cleaner studio-style GPU artwork.
+function getGpuSvg(model) {
+  const styles = {
+    'RTX 5080':    {a:'#91ff6a', b:'#26302b', fans:3, label:'GEFORCE RTX 5080', mark:'RTX'},
+    'RTX 5070':    {a:'#76e34f', b:'#222b25', fans:3, label:'GEFORCE RTX 5070', mark:'RTX'},
+    'RTX 5060 Ti': {a:'#51b9ff', b:'#1d2935', fans:2, label:'RTX 5060 Ti', mark:'Ti'},
+    'RTX 5060':    {a:'#9a78ff', b:'#292239', fans:2, label:'RTX 5060', mark:'RTX'},
+    'RTX 3060 Ti': {a:'#e6e8ea', b:'#303237', fans:2, label:'RTX 3060 Ti', mark:'Ti'},
+    'RX 580':      {a:'#ff4c4c', b:'#371f21', fans:2, label:'RADEON RX 580', mark:'RX'},
+    'RX 560':      {a:'#ff764f', b:'#39251f', fans:1, label:'RADEON RX 560', mark:'RX'},
+    'RX 550':      {a:'#e85c91', b:'#35212b', fans:1, label:'RADEON RX 550', mark:'RX'}
+  };
+  const p = styles[model] || {a:'#8da2b8', b:'#252b33', fans:2, label:model, mark:'GPU'};
+  const uid = 'art' + model.replace(/\W/g, '');
+  const xs = p.fans === 3 ? [91,160,229] : p.fans === 2 ? [117,203] : [160];
+  const r = p.fans === 3 ? 30 : p.fans === 2 ? 38 : 48;
+  const makeFan = x => {
+    let blades = '';
+    for (let i=0; i<9; i++) {
+      blades += '<path d="M'+x+' 113 C'+(x+7)+' '+(113-r+8)+' '+(x+22)+' '+(113-r+10)+' '+(x+25)+' '+(113-r+2)+' C'+(x+31)+' '+(113-r+15)+' '+(x+24)+' '+(113-8)+' '+x+' 119Z" fill="url(#blade-'+uid+')" transform="rotate('+(i*40)+' '+x+' 119)"/>';
+    }
+    return '<circle cx="'+x+'" cy="119" r="'+r+'" fill="#080a0d" stroke="#454b52" stroke-width="2"/>'+blades+'<circle cx="'+x+'" cy="119" r="10" fill="#15191e" stroke="'+p.a+'" stroke-opacity=".65" stroke-width="2"/><circle cx="'+x+'" cy="119" r="3" fill="'+p.a+'"/>';
+  };
+  return '<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">'
+    +'<defs>'
+    +'<radialGradient id="bg-'+uid+'"><stop stop-color="#26303b"/><stop offset="1" stop-color="#0b0f14"/></radialGradient>'
+    +'<linearGradient id="case-'+uid+'" x1="0" y1="0" x2="1" y2="1"><stop stop-color="'+p.b+'"/><stop offset=".55" stop-color="#171b20"/><stop offset="1" stop-color="#090c10"/></linearGradient>'
+    +'<linearGradient id="blade-'+uid+'"><stop stop-color="#65707a"/><stop offset="1" stop-color="#1b2026"/></linearGradient>'
+    +'<filter id="shadow-'+uid+'"><feGaussianBlur stdDeviation="7"/></filter>'
+    +'</defs>'
+    +'<rect width="320" height="220" fill="url(#bg-'+uid+')"/>'
+    +'<ellipse cx="164" cy="190" rx="128" ry="13" fill="#000" opacity=".62" filter="url(#shadow-'+uid+')"/>'
+    +'<g transform="rotate(-2 160 112)">'
+    +'<path d="M31 62 L49 43 H270 L291 61 V169 L276 182 H45 L27 165Z" fill="url(#case-'+uid+')" stroke="#4b525a" stroke-width="2"/>'
+    +'<path d="M47 48 H268 L282 61" fill="none" stroke="'+p.a+'" stroke-width="4" stroke-linecap="round" opacity=".9"/>'
+    +'<path d="M45 54 H270" stroke="#fff" opacity=".12"/>'
+    +xs.map(makeFan).join('')
+    +'<path d="M55 169 H264" stroke="'+p.a+'" stroke-width="3" opacity=".55"/>'
+    +'<rect x="94" y="177" width="135" height="9" rx="1" fill="#cda75d"/><path d="M104 179 H220" stroke="#73572e" stroke-dasharray="4 3"/>'
+    +'<path d="M27 76 H18 V143 H27" fill="#949ba2"/><rect x="18" y="88" width="7" height="12" fill="#272c32"/><rect x="18" y="106" width="7" height="12" fill="#272c32"/>'
+    +'<text x="52" y="73" fill="#f1f4f6" font-size="9" font-weight="700" font-family="Arial,sans-serif" letter-spacing="1.2">'+p.label+'</text>'
+    +'<text x="267" y="158" text-anchor="end" fill="'+p.a+'" font-size="15" font-weight="900" font-family="Arial,sans-serif" opacity=".9">'+p.mark+'</text>'
+    +'</g></svg>';
+}
+
+const MODEL_IMAGE_POOL = ALL_DATA.reduce((pool, item) => {
+  if (item.img && /^https?:\/\//.test(item.img)) {
+    (pool[item.model] || (pool[item.model] = [])).push(item.img.replace(/^http:/, 'https:'));
+  }
+  return pool;
+}, {});
+
+function getRealGpuImage(item, index) {
+  if (item.img && /^https?:\/\//.test(item.img)) return item.img.replace(/^http:/, 'https:');
+  const pool = MODEL_IMAGE_POOL[item.model] || [];
+  return pool.length ? pool[index % pool.length] : '';
+}
+
+function renderCards() {
+  const grid = document.getElementById('cardGrid');
+  const subtitle = document.getElementById('cardSubtitle');
+  grid.innerHTML = '';
+
+  let filtered = activeMonth === 'all' ? ALL_DATA : ALL_DATA.filter(d => d.month === activeMonth);
+  subtitle.textContent = '共 ' + filtered.length + ' 件显卡商品';
+
+  const fragments = filtered.map((item, index) => {
+    const div = document.createElement('div');
+    div.className = 'card';
+	    const gpuSvg = getGpuSvg(item.model);
+	    const realImage = getRealGpuImage(item, index);
+	    const visual = realImage
+	      ? '<img src="'+realImage+'" alt="'+item.model+' 实拍显卡" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"><div class="gpu-svg-fallback" style="display:none">'+gpuSvg+'</div>'
+	      : '<div class="gpu-svg-fallback">'+gpuSvg+'</div>';
+	    const monthLabel = MONTH_LABELS[MONTHS.indexOf(item.month)] || item.month;
+	    div.innerHTML = `
+	      <div class="card-img-wrap">
+	        ${visual}
+	      </div>
+	      <div class="card-body">
+        <div class="card-top-row">
+          <span class="card-model-name">${item.model}</span>
+          <span class="card-month">${monthLabel}</span>
+        </div>
+        <div class="card-price">${item.price.toFixed(0)}</div>
+        <div class="card-title" title="${item.title.replace(/"/g, '&quot;')}">${item.title}</div>
+        <div class="card-addr">${item.addr}</div>
+      </div>`;
+    return div;
+  });
+  fragments.forEach(f => grid.appendChild(f));
+}
+renderCards();
+
+// ── Render trend chart ──
+(function() {
+  const svg = document.getElementById('trendChart');
+  const container = document.getElementById('chartContainer');
+  const tooltip = document.getElementById('chartTooltip');
+  const ttMonth = tooltip.querySelector('.tt-month');
+  const ttRows = document.getElementById('ttRows');
+  const legendEl = document.getElementById('chartLegend');
+
+  const margin = { top: 16, right: 80, bottom: 40, left: 66 };
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+  const w = W - margin.left - margin.right;
+  const h = H - margin.top - margin.bottom;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.style.display = 'block';
+
+  // Y range
+  const allAvgs = TREND_DATA.flatMap(m => m.points.map(p => p.avg)).filter(v => v !== null);
+  const yMin = Math.floor(Math.min(...allAvgs) / 500) * 500;
+  const yMax = Math.ceil(Math.max(...allAvgs) / 500) * 500;
+  const yRange = yMax - yMin || 500;
+
+  const nMonths = TREND_DATA[0].points.length;  // 7
+  const xStep = w / (nMonths - 1);
+  const xScale = i => margin.left + i * xStep;
+  const yScale = v => margin.top + h - ((v - yMin) / yRange) * h;
+
+  // ── Build legend ──
+  TREND_MODELS.forEach((model, i) => {
+    const item = document.createElement('span');
+    item.className = 'legend-item';
+    item.dataset.index = i;
+    item.innerHTML = `<span class="legend-line" style="background:var(--s${i+1})"></span>${model}`;
+    item.addEventListener('click', () => {
+      const dimmed = item.classList.toggle('dimmed');
+      // dim/brighten the corresponding line group
+      const lines = svg.querySelectorAll(`[data-series="${i}"]`);
+      lines.forEach(el => el.setAttribute('opacity', dimmed ? '0.15' : '1'));
+    });
+    legendEl.appendChild(item);
+  });
+
+  // ── Gridlines ──
+  let svgHtml = '';
+  const yTicks = 6;
+  for (let i = 0; i <= yTicks; i++) {
+    const val = yMin + (yRange / yTicks) * i;
+    const y = yScale(val);
+    svgHtml += `<line x1="${margin.left}" x2="${margin.left + w}" y1="${y}" y2="${y}" stroke="var(--gridline)" stroke-width="1"/>`;
+    svgHtml += `<text x="${margin.left - 8}" y="${y + 4}" text-anchor="end" fill="var(--text-muted)" font-size="11" font-family="inherit">¥${val.toLocaleString()}</text>`;
+  }
+
+  // ── X-axis labels ──
+  TREND_DATA[0].points.forEach((pt, i) => {
+    const x = xScale(i);
+    svgHtml += `<text x="${x}" y="${margin.top + h + 20}" text-anchor="middle" fill="var(--text-muted)" font-size="11" font-family="inherit">${pt.label}</text>`;
+  });
+
+  // ── Baseline ──
+  svgHtml += `<line x1="${margin.left}" x2="${margin.left + w}" y1="${yScale(yMin)}" y2="${yScale(yMin)}" stroke="var(--baseline)" stroke-width="1"/>`;
+
+  // ── Lines per series ──
+  TREND_DATA.forEach((series, si) => {
+    const validPts = series.points.map((p, i) => ({i, avg: p.avg})).filter(p => p.avg !== null);
+    if (validPts.length < 2) return;
+
+    // Area fill
+    let areaPath = `M${xScale(validPts[0].i)},${yScale(yMin)}`;
+    for (const pt of validPts) areaPath += ` L${xScale(pt.i)},${yScale(pt.avg)}`;
+    areaPath += ` L${xScale(validPts[validPts.length-1].i)},${yScale(yMin)} Z`;
+    svgHtml += `<path d="${areaPath}" fill="var(--s${si+1}-fill)" stroke="none" data-series="${si}"/>`;
+
+    // Line
+    let linePath = '';
+    for (let j = 0; j < validPts.length; j++) {
+      linePath += (j === 0 ? 'M' : 'L') + `${xScale(validPts[j].i).toFixed(1)},${yScale(validPts[j].avg).toFixed(1)}`;
+    }
+    svgHtml += `<path d="${linePath}" fill="none" stroke="var(--s${si+1})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-series="${si}"/>`;
+
+    // End dot
+    const last = validPts[validPts.length - 1];
+    const lx = xScale(last.i), ly = yScale(last.avg);
+    svgHtml += `<circle cx="${lx}" cy="${ly}" r="5" fill="var(--surface-1)" stroke="var(--s${si+1})" stroke-width="2" data-series="${si}"/>`;
+    svgHtml += `<circle cx="${lx}" cy="${ly}" r="3" fill="var(--s${si+1})" stroke="none" data-series="${si}"/>`;
+
+    // Direct end label for top 4 series (avoid clutter)
+    if (si < 4) {
+      svgHtml += `<text x="${lx + 8}" y="${ly + 4}" fill="var(--text-secondary)" font-size="11" font-weight="500" font-family="inherit" data-series="${si}">${series.model}</text>`;
+    }
+  });
+
+  // X-axis title
+  svgHtml += `<text x="${margin.left + w/2}" y="${H - 4}" text-anchor="middle" fill="var(--text-muted)" font-size="11" font-family="inherit">月份</text>`;
+
+  svg.innerHTML = svgHtml;
+
+  // ── Interaction: crosshair + tooltip ──
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;';
+  container.style.position = 'relative';
+  container.appendChild(overlay);
+
+  const crosshair = document.createElement('div');
+  crosshair.style.cssText = 'position:absolute;top:0;width:1px;height:100%;background:var(--text-muted);opacity:0.3;pointer-events:none;display:none;';
+  container.appendChild(crosshair);
+
+  overlay.addEventListener('mousemove', function(e) {
+    const rect = container.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    if (mx < margin.left || mx > margin.left + w || my < margin.top || my > margin.top + h) {
+      crosshair.style.display = 'none';
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    // Find nearest month
+    let nearest = 0, minDist = Infinity;
+    for (let i = 0; i < nMonths; i++) {
+      const dist = Math.abs(mx - xScale(i));
+      if (dist < minDist) { minDist = dist; nearest = i; }
+    }
+
+    const sx = xScale(nearest);
+    crosshair.style.display = 'block';
+    crosshair.style.left = sx + 'px';
+
+    const ptLabel = TREND_DATA[0].points[nearest].label;
+    ttMonth.textContent = ptLabel;
+
+    let rowsHtml = '';
+    TREND_DATA.forEach((series, si) => {
+      const val = series.points[nearest].avg;
+      if (val !== null) {
+        rowsHtml += `<div class="tt-row">
+          <span class="tt-line" style="background:var(--s${si+1})"></span>
+          <span class="tt-model">${series.model}</span>
+          <span class="tt-val">¥${val.toLocaleString()}</span>
+        </div>`;
+      }
+    });
+    ttRows.innerHTML = rowsHtml;
+
+    tooltip.style.display = 'block';
+    const tx = sx + 14;
+    tooltip.style.left = Math.min(tx, W - 175) + 'px';
+    tooltip.style.top = '8px';
+  });
+
+  overlay.addEventListener('mouseleave', function() {
+    crosshair.style.display = 'none';
+    tooltip.style.display = 'none';
+  });
+})();
+</script>
+
+</body>
+</html>
