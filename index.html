@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>房佳航 · Python 爬虫开发</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['"Archivo Black"', 'system-ui', 'sans-serif'],
+          sans: ['"Space Grotesk"', 'system-ui', 'sans-serif']
+        },
+        colors: {
+          base: '#0A0E1A', surface: '#121829', raised: '#1B2233',
+          line: '#E8F1FF', ink: '#EAF2FF', dim: '#9BB0C9', neon: '#00E5FF',
+          mint: '#A3E635', grape: '#C084FC', lemon: '#FDE047', sky: '#38BDF8'
+        },
+        boxShadow: {
+          'nb-sm': '2px 2px 0 0 #00E5FF',
+          nb: '4px 4px 0 0 #00E5FF',
+          'nb-lg': '6px 6px 0 0 #00E5FF',
+          'nb-xl': '8px 8px 0 0 #00E5FF'
+        }
+      }
+    }
+  };
+</script>
+<style>
+
+
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+
+body {
+  background-color: #0A0E1A;
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+
+
+.cursor-ring {
+  position: fixed; left: 0; top: 0; z-index: 60;
+  width: 26px; height: 26px; margin: -13px 0 0 -13px;
+  border: 2px solid #00E5FF; border-radius: 9999px;
+  pointer-events: none; opacity: 0; will-change: transform;
+  transition: width .16s ease, height .16s ease, margin .16s ease,
+              background-color .16s ease, border-color .16s ease,
+              box-shadow .16s ease, opacity .2s ease;
+}
+.cursor-ring.is-hover {
+  width: 44px; height: 44px; margin: -22px 0 0 -22px;
+  background: rgba(0, 229, 255, 0.10); border-color: #A3E635;
+}
+.cursor-ring.is-down {
+  width: 16px; height: 16px; margin: -8px 0 0 -8px;
+  background: rgba(0, 229, 255, 0.35);
+}
+
+
+.sec-title::before {
+  content: ""; width: 26px; height: 26px; flex-shrink: 0;
+  background: #A3E635; border: 2px solid #E8F1FF; box-shadow: 2px 2px 0 0 #00E5FF;
+  rotate: -4deg;
+}
+#projects .sec-title::before { background: #C084FC; rotate: 3deg; }
+#works .sec-title::before { background: #38BDF8; rotate: -3deg; }
+#certs .sec-title::before { background: #FDE047; rotate: 2deg; }
+#outlook .sec-title::before { background: #A3E635; rotate: -2deg; }
+#social .sec-title::before { background: #C084FC; rotate: 4deg; }
+
+
+.p-list li::before, .phase li::before {
+  content: "\25B8"; position: absolute; left: 0; font-weight: 700;
+}
+
+
+.chips .chip:nth-child(2n) { background: #FDE047; rotate: 1.5deg; }
+.chips .chip:nth-child(3n) { background: #C084FC; rotate: -2deg; }
+
+
+.topnav .nav-links a.is-active {
+  border-color: #E8F1FF; background: #A3E635; color: #000;
+  box-shadow: 2px 2px 0 0 #00E5FF;
+}
+
+
+.to-top.show { opacity: 1; visibility: visible; }
+.to-top:hover { translate: -2px -3px; rotate: -12deg; }
+
+
+[data-v] { transition: width 0.5s linear; }
+
+
+.hero-badges li { transition: rotate .15s ease, translate .15s ease; }
+.hero-badges li:hover { rotate: 4deg; translate: 0 -3px; }
+.skill-idx, .w-thumb-num { transition: translate .15s ease; }
+.skill-card:hover .skill-idx { translate: -2px -2px; }
+.w-card:hover .w-thumb-num { translate: -2px -2px; }
+
+
+.cert-flip { perspective: 1400px; }
+.cert-flip:focus-visible { outline: 3px solid #A3E635; outline-offset: 4px; }
+.cert-flip__inner {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform .6s cubic-bezier(.2, .8, .2, 1);
+}
+.cert-flip__face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.cert-flip__back { transform: rotateY(180deg); }
+.cert-flip:hover .cert-flip__inner,
+.cert-flip:focus-within .cert-flip__inner,
+.cert-flip.is-flipped .cert-flip__inner { transform: rotateY(180deg); }
+
+
+.reveal { opacity: 0; }
+.reveal.is-in { animation: revealIn 0.35s linear forwards; }
+@keyframes revealIn {
+  from { opacity: 0; translate: 0 16px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+
+@media (max-width: 640px) {
+  [class*="shadow-nb"]:not(:active) { box-shadow: 3px 3px 0 0 #00E5FF !important; }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; }
+  .reveal.is-in { animation: none; }
+  [data-v] { transition: none; }
+  .cursor-ring { display: none; }
+  .cert-flip__inner { transition: none; }
+  .hero-badges li, .skill-idx, .w-thumb-num, .to-top { transition: none; }
+}
+</style>
+</head>
+<body class="font-sans text-ink leading-relaxed min-h-screen">
+
+
+<div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+
+
+<nav class="topnav fixed top-0 left-0 right-0 z-50 bg-base border-b-[3px] border-line">
+  <div class="wrap max-w-[1200px] mx-auto px-4 sm:px-5 md:px-12 flex items-center gap-5 h-16">
+    <span class="brand hidden md:inline-block text-[0.95rem] font-black tracking-[1px] text-black bg-lemon border-2 border-line shadow-nb-sm px-3 py-1 rotate-[-2deg]">房佳航</span>
+    <div class="nav-links flex gap-2 ml-auto overflow-x-auto">
+      <a href="#skills" class="px-[14px] py-[7px] rounded-none whitespace-nowrap text-[0.88rem] font-semibold text-ink border-2 border-transparent transition-all duration-100 hover:border-line hover:bg-mint hover:text-black">专业能力</a>
+      <a href="#projects" class="px-[14px] py-[7px] rounded-none whitespace-nowrap text-[0.88rem] font-semibold text-ink border-2 border-transparent transition-all duration-100 hover:border-line hover:bg-mint hover:text-black">项目经验</a>
+      <a href="#works" class="px-[14px] py-[7px] rounded-none whitespace-nowrap text-[0.88rem] font-semibold text-ink border-2 border-transparent transition-all duration-100 hover:border-line hover:bg-mint hover:text-black">作品展示</a>
+      <a href="#certs" class="px-[14px] py-[7px] rounded-none whitespace-nowrap text-[0.88rem] font-semibold text-ink border-2 border-transparent transition-all duration-100 hover:border-line hover:bg-mint hover:text-black">证书与资质</a>
+      <a href="#outlook" class="px-[14px] py-[7px] rounded-none whitespace-nowrap text-[0.88rem] font-semibold text-ink border-2 border-transparent transition-all duration-100 hover:border-line hover:bg-mint hover:text-black">未来展望</a>
+    </div>
+  </div>
+</nav>
+
+
+<section class="hero relative min-h-0 md:min-h-screen flex items-center justify-center bg-base border-b-[3px] border-line pt-[104px] pb-14 md:pt-32 md:pb-[72px]">
+  <div class="hero-inner w-full max-w-[1200px] mx-auto px-4 sm:px-5 md:px-12 flex items-center justify-start">
+
+    
+    <div class="hero-summary max-w-[880px] min-w-0 bg-surface border-[3px] border-line shadow-nb-xl p-[26px_22px] md:p-10">
+
+      
+      <h1 class="hero-name inline-block font-display normal-case text-[clamp(2.6rem,6vw,4.4rem)] leading-[1.02] tracking-[2px] text-black bg-lemon border-[3px] border-line shadow-nb-lg px-4 pt-1 pb-[10px] mb-4 md:px-5 md:pt-[6px] rotate-[-1.5deg]">房佳航</h1>
+
+      
+      <div class="mb-6">
+        <p class="hero-edu-tag inline-flex items-center gap-[10px] px-4 py-[10px] md:px-5 md:py-3 bg-sky border-2 border-line rounded-none shadow-nb text-[0.92rem] md:text-base text-black font-bold rotate-[0.8deg]">
+          <i class="ri-graduation-cap-line text-[18px]"></i>
+          齐鲁师范学院 · 物理师范 · 本科 · 2026.09 - 2030.06
+        </p>
+      </div>
+
+      
+      <p class="hero-about text-[0.96rem] md:text-[1.02rem] leading-[1.95] text-ink mb-6">
+        自学 Python 爬虫，能抓取网页数据并自动整理为 Excel 表格，替代人工复制粘贴；已完成 10+ 个实战小项目并开源，代码真实可运行。具备 AI 工具使用能力，能将 AI 工具与 Python 脚本结合，辅助完成资料整理、内容分析等重复性工作，提升效率。
+      </p>
+
+      
+      <ul class="hero-badges flex flex-wrap gap-3 list-none mb-7">
+        <li class="px-[15px] py-[7px] text-[0.84rem] tracking-[0.5px] font-bold text-black border-2 border-line rounded-none shadow-nb-sm bg-mint rotate-[-2deg]">Python 爬虫</li>
+        <li class="px-[15px] py-[7px] text-[0.84rem] tracking-[0.5px] font-bold text-black border-2 border-line rounded-none shadow-nb-sm bg-sky rotate-[1.5deg]">数据采集</li>
+        <li class="px-[15px] py-[7px] text-[0.84rem] tracking-[0.5px] font-bold text-black border-2 border-line rounded-none shadow-nb-sm bg-grape rotate-[2.5deg]">Excel 自动化</li>
+        <li class="px-[15px] py-[7px] text-[0.84rem] tracking-[0.5px] font-bold text-black border-2 border-line rounded-none shadow-nb-sm bg-lemon rotate-[-1.5deg]">反爬对抗</li>
+        <li class="px-[15px] py-[7px] text-[0.84rem] tracking-[0.5px] font-bold text-black border-2 border-line rounded-none shadow-nb-sm bg-mint rotate-[1deg]">AI 工具应用</li>
+      </ul>
+
+      
+      <div class="hero-contact flex flex-wrap gap-[10px] sm:gap-3">
+
+        
+        <button class="inline-flex items-center gap-2 px-[14px] py-[9px] md:px-5 md:py-3 text-[0.88rem] md:text-[0.92rem] font-bold bg-mint border-2 border-line rounded-none text-black shadow-nb transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-nb-sm hover:bg-mint active:translate-x-1 active:translate-y-1 active:shadow-none" id="copyMail" type="button" title="点击复制邮箱">
+          <i class="ri-mail-line text-[18px]"></i>
+          <span id="mailText">复制邮箱</span>
+        </button>
+
+        
+        <a class="inline-flex items-center gap-2 px-[14px] py-[9px] md:px-5 md:py-3 text-[0.88rem] md:text-[0.92rem] font-bold bg-surface border-2 border-line rounded-none text-ink shadow-nb transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-nb-sm hover:bg-lemon hover:text-black active:translate-x-1 active:translate-y-1 active:shadow-none" href="tel:19506370070">
+          <i class="ri-phone-line text-[18px]"></i>
+          19506370070
+        </a>
+
+        
+        <a class="inline-flex items-center gap-2 px-[14px] py-[9px] md:px-5 md:py-3 text-[0.88rem] md:text-[0.92rem] font-bold bg-surface border-2 border-line rounded-none text-ink shadow-nb transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-nb-sm hover:bg-lemon hover:text-black active:translate-x-1 active:translate-y-1 active:shadow-none" href="https://github.com/fangjihang/fangjiahang.github.io" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.26.82-.577v-2.234c-3.338.724-4.033-1.416-4.033-1.416-.546-1.385-1.333-1.755-1.333-1.755-1.09-.744.084-.729.084-.729 1.205.084 1.838 1.238 1.838 1.238 1.07 1.835 2.807 1.305 3.492.998.108-.776.417-1.305.76-1.605-2.665-.3-5.467-1.332-5.467-5.93 0-1.31.467-2.38 1.236-3.22-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23A11.5 11.5 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.37.814 1.102.814 2.222v3.293c0 .32.218.694.825.576C20.565 21.796 24 17.297 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+
+        
+        <a class="inline-flex items-center gap-2 px-[14px] py-[9px] md:px-5 md:py-3 text-[0.88rem] md:text-[0.92rem] font-bold bg-surface border-2 border-line rounded-none text-ink shadow-nb transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-nb-sm hover:bg-lemon hover:text-black active:translate-x-1 active:translate-y-1 active:shadow-none" href="https://gitee.com/fangjiahang/toy-spider-web" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.8 10.4l-3.2 3.2a.4.4 0 01-.56 0L8.76 11.32a.4.4 0 11.56-.56l2.96 2.96 2.96-2.96a.4.4 0 11.56.56zm0-4l-3.2 3.2a.4.4 0 01-.56 0L8.76 7.32a.4.4 0 11.56-.56l2.96 2.96 2.96-2.96a.4.4 0 11.56.56z"/></svg>
+          Gitee
+        </a>
+
+        
+        <a class="inline-flex items-center gap-2 px-[14px] py-[9px] md:px-5 md:py-3 text-[0.88rem] md:text-[0.92rem] font-bold bg-surface border-2 border-line rounded-none text-ink shadow-nb transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-nb-sm hover:bg-lemon hover:text-black active:translate-x-1 active:translate-y-1 active:shadow-none" href="https://blog.csdn.net/xu_he_" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm-1.5 5h3v6h-3V5zm-4 8h11v2.5h-4V19h-3v-3.5h-4V13z"/></svg>
+          CSDN
+        </a>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section relative py-[60px] md:py-[88px] bg-base border-b-[3px] border-line" id="skills">
+  <div class="wrap max-w-[1200px] mx-auto px-4 sm:px-5 md:px-12">
+    <div class="sec-head mb-11">
+      <h2 class="sec-title inline-flex items-center gap-[14px] font-display text-[clamp(1.5rem,2.8vw,2.1rem)] font-black tracking-normal text-ink">专业能力</h2>
+      <p class="sec-sub mt-[14px] text-ink text-[0.9rem] tracking-[0.5px] font-medium">按方向分组 · 熟练度依据简历描述与项目实践设定</p>
+    </div>
+    <div class="grid gap-[22px] grid-cols-[repeat(auto-fit,minmax(300px,1fr))]" id="skillGrid"></div>
+  </div>
+</section>
+
+
+<section class="section relative py-[60px] md:py-[88px] bg-surface border-b-[3px] border-line" id="projects">
+  <div class="wrap max-w-[1200px] mx-auto px-4 sm:px-5 md:px-12">
+    <div class="sec-head mb-11">
+      <h2 class="sec-title inline-flex items-center gap-[14px] font-display text-[clamp(1.5rem,2.8vw,2.1rem)] font-black tracking-normal text-ink">项目经验</h2>
+      <p class="sec-sub mt-[14px] text-ink text-[0.9rem] tracking-[0.5px] font-medium">3 个实战项目 · 代码已在 Gitee 开源</p>
+    </div>
+    <div class="grid gap-[22px] grid-cols-[repeat(auto-fit,minmax(300px,1fr))]" id="projectGrid"></div>
+  </div>
+</section>
+
+
+<section class="section relative py-[60px] md:py-[88px] bg-base border-b-[3px] border-line" id="works">
+  <div class="wrap max-w-[1200px] mx-auto px-4 sm:px-5 md:px-12">
+    <div class="sec-head mb-11">
+      <h2 class="sec-title inline-flex items-center gap-[14px] font-display text-[clamp(1.5rem,2.8vw,2.1rem)] font-black tracking-normal text-ink">作品展示</h2>
+      <p class="sec-sub mt-[14px] text-ink text-[0.9rem] tracking-[0.5px] font-medium">来自 GitHub 仓库 Portfolio 目录 · 可直接查看源码</p>
+    </div>
+    <div class="grid gap-[22px] grid-cols-[repeat(auto-fit,minmax(300px,1fr))]" id="workGrid"></div>
+  </div>
+</section>
+
+
+<section class="section relative py-[60px] md:py-[88px] bg-surface border-b-[3px] border-line" id="certs">
+  <div class="wrap max-w-[1200px] mx-auto px-4 sm:px-5 md:px-12">
+    <div class="sec-head mb-11">
+      <h2 class="sec-title inline-flex items-center gap-[14px] font-display text-[clamp(1.5rem,2.8vw,2.1rem)] font-black tracking-normal text-ink">证书与资质</h2>
+      <p class="sec-sub mt-[14px] text-ink text-[0.9rem] tracking-[0.5px] font-medium">依据证书原件如实填写</p>
+    </div>
+    <div class="grid gap-[22px]" id="certGrid"></div>
+  </div>
+</section>
+
+
+<section class="section relative py-[60px] md:py-[88px] bg-base border-b-[3px] border-line" id="outlook">
+  <div class="wrap max-w-[1200px] mx-auto px-4 sm:px-5 md:px-12">
+    <div class="sec-head mb-11">
+      <h2 class="sec-title inline-flex items-center gap-[14px] font-display text-[clamp(1.5rem,2.8vw,2.1rem)] font-black tracking-normal text-ink">未来展望</h2>
+      <p class="sec-sub mt-[14px] text-ink text-[0.9rem] tracking-[0.5px] font-medium">短期 · 中期 · 长期</p>
+    </div>
+    <div class="grid gap-[22px] grid-cols-[repeat(auto-fit,minmax(300px,1fr))]" id="outlookWrap"></div>
+  </div>
+</section>
+
+
+<section class="section relative py-[60px] md:py-[88px] bg-surface border-b-[3px] border-line" id="social">
+  <div class="wrap max-w-[1200px] mx-auto px-4 sm:px-5 md:px-12">
+    <div class="sec-head mb-11">
+      <h2 class="sec-title inline-flex items-center gap-[14px] font-display text-[clamp(1.5rem,2.8vw,2.1rem)] font-black tracking-normal text-ink">找到我</h2>
+      <p class="sec-sub mt-[14px] text-ink text-[0.9rem] tracking-[0.5px] font-medium">开源仓库与技术博客</p>
+    </div>
+    <div class="social-bar flex flex-col md:flex-row gap-4" id="socialBar"></div>
+  </div>
+</section>
+
+
+<footer class="footer relative bg-base py-9 text-center">
+  <div class="wrap max-w-[1200px] mx-auto px-4 sm:px-5 md:px-12">
+    <p class="text-[0.85rem] text-ink tracking-[1px]">© 2026 房佳航 · 保留所有权利</p>
+    <p class="mt-[6px] text-[0.78rem] text-ink/70 tracking-[1px]">最后更新：2026-10-06</p>
+  </div>
+</footer>
+
+
+<button class="to-top fixed right-4 bottom-4 md:right-6 md:bottom-6 z-50 w-12 h-12 rounded-none flex items-center justify-center bg-mint border-2 border-line text-black shadow-nb opacity-0 invisible transition-all duration-[120ms]" id="toTop" type="button" aria-label="回到顶部">
+  <i class="ri-arrow-up-line text-[20px]"></i>
+</button>
+
+<script>
+
+
+
+const GH_BLOB = 'https://github.com/fangjihang/fangjiahang.github.io/blob/main/';
+
+const GITEE_REPO = 'https://gitee.com/fangjiahang/toy-spider-web';
+
+const RESUME = {
+
+  
+  skills: [
+    {
+      idx: '01',
+      name: 'Python 爬虫与自动化',
+      note: '采集 → 反爬 → 解析 → 调度 → 存储',
+      wide: true,
+      items: [
+        ['Python', 90], ['Requests', 90], ['DrissionPage', 90], ['Playwright', 90],
+        ['IP 代理池', 90], ['UA 指纹轮换', 90], ['Cookie 会话管理', 90], ['请求头伪装', 90],
+        ['验证码识别', 90], ['参数逆向解密', 90], ['JS 逆向分析', 90], ['行为风控对抗', 90]
+      ],
+      extra: '简历「数据解析层 / 自动化调度层 / 数据存储层」原文：XPath · 正则表达式 (RegEx) · BeautifulSoup · lxml · JSON 结构化解析 · 定时任务 (Cron) · 增量更新机制 · 失败重试机制 · 任务监控告警 · 多线程并发 · CSV / JSON · Excel · Pandas'
+    },
+    {
+      idx: '02',
+      name: '办公自动化',
+      note: '用脚本替代重复劳动',
+      items: [['PDF 处理', 80], ['Excel 表格自动化', 80], ['Word 排版', 80]],
+      extra: '简历「个人优势」原文：办公软件熟练 —— 熟练使用 Excel、PPT，能高效完成各类表格的撰写。'
+    },
+    {
+      idx: '03',
+      name: 'AI 应用与 AIGC',
+      note: 'AI 工具链与自动化创新',
+      items: [['Vibe Coding（AI 辅助编程）', 80], ['AI Agent / AIGC 学习', 50]],
+      extra: '简历「智能化层」原文：AI 大模型工具链 · 自动化内容生成 · 视频拆解 · 素材批量处理。「AI智能化应用与效率提升能力」原文：熟悉 Python 结合 AI 工具进行自动化创新，可利用 AI 辅助完成内容分析、视频拆解、爆款内容批量生成、素材处理等任务，提升内容生产与业务执行效率。'
+    }
+  ],
+
+  
+  projects: [
+    {
+      name: 'Python 爬虫与数据采集小工具',
+      meta: 'Python爬虫开发 | 2026年8月',
+      points: [
+        '批量下载壁纸图片、小说文本、音频素材',
+        '视频内容抓取（小红书等平台的图文/视频）',
+        '爬取结果自动整理为 Excel/CSV 表格',
+        '代码已开源至 Gitee/GitHub，教程发在 CSDN'
+      ],
+      stack: ['Python', 'requests', 'BeautifulSoup', 'Pandas'],
+      evidence: '仓库文件：01壁纸下载/批量爬取壁纸.py · 03小说下载/小说下载.py · 05音乐下载/音乐下载.py · 06视频下载/B站视频批量自动化下载.py',
+      link: GITEE_REPO
+    },
+    {
+      name: '小红书数据与电商价格监控',
+      meta: 'Python爬虫开发 | 2026年8月',
+      points: [
+        '抓取小红书图文/视频的关键信息（标题、点赞数等），用 Pandas 整理成表格',
+        '定时抓取京东/淘宝/闲鱼的商品价格，降价了通过微信推送提醒',
+        '支持多商品同时监控，数据自动记录到 Excel'
+      ],
+      stack: ['Python', 'requests', 'Pandas', '定时任务', 'PushPlus推送'],
+      note: '简历说明：代码能跑通，部分平台改版后需要改一下 Cookie。',
+      evidence: '仓库文件：07小红书数据获取/小红书数据提取.py · 09商品价格监控/监控京东商品价格.py · 监控淘宝商品价格.py · Drissionpage监控闲鱼数据.py · 自动结束定时任务/timing.py',
+      link: GITEE_REPO
+    },
+    {
+      name: '考研信息与兼职岗位数据分析',
+      meta: 'Python爬虫开发 | 2026年8月',
+      points: [
+        '抓取各高校考研信息（分数线、招生人数等），用 Pandas 清洗整理',
+        '用 Pyecharts 画了柱状图、折线图、饼图、词云图',
+        '抓取兼职岗位信息，分析不同地区/岗位的薪资差异',
+        '最终导出图表图片和 Excel 汇总表'
+      ],
+      stack: ['Python', 'Pandas', 'Pyecharts', 'Excel'],
+      evidence: '仓库文件：13考研数据分析/各院校历年数据采集.py · 14考研数据可视化/考研数据可视化绘图.py · 考研数据动态图表.py · 17兼职岗位数据分析/生成可视化大屏.py',
+      link: GITEE_REPO
+    }
+  ],
+
+  
+  
+  works: [
+    { title: '热歌短视频工坊', path: 'Portfolio/短视频生成器.html', bg: 'Portfolio/bgimgs/短视频工坊.png' },
+    { title: '英雄盲盒十连抽 · 角色档案卡 + 存档效果页', path: 'Portfolio/盲盒数据保存_英雄十连抽存档效果图.html', bg: 'Portfolio/bgimgs/英雄盲盒.png' },
+    { title: '拼夕夕·砍一刀转盘｜先甜后苦版', path: 'Portfolio/拼多多一刀暴富.html', bg: 'Portfolio/bgimgs/拼多多砍一刀.png' },
+    { title: '闲鱼显卡商品数据 - 多月份价格趋势', path: 'Portfolio/价格趋势.html', bg: 'Portfolio/bgimgs/显卡价格趋势.png' },
+    { title: '今日星座运势罗盘', path: 'Portfolio/今日星座运势罗盘.html', bg: 'Portfolio/bgimgs/星座运势罗盘.png' },
+    { title: '博客文章速写器', path: 'Portfolio/个人文章搭建模版.html', bg: null },
+    { title: '开阳云音乐 - KaiYang Cloud Music', path: 'Portfolio/开阳云音乐网站.html', bg: 'Portfolio/bgimgs/开阳云音乐.png' },
+    { title: '开阳笔记 - 发现美好', path: 'Portfolio/模拟小红书笔记.html', bg: 'Portfolio/bgimgs/小红书笔记.png' },
+    { title: '通用数据可视化大屏 · 液体玻璃', path: 'Portfolio/csv自动化大屏/CSV自动大屏.html', bg: 'Portfolio/bgimgs/数据大屏.png' },
+    { title: '3D回忆照片墙', path: 'Portfolio/照片回忆墙/照片墙.html', bg: 'Portfolio/bgimgs/3D照片墙.png' },
+    { title: '程序员私活接单数据分析大屏', path: 'Portfolio/index.html', bg: 'Portfolio/bgimgs/程序员私活数据大屏.png' },
+    { title: 'Creative Lab｜创意作品空间', path: 'Portfolio/炫酷项目展示.html', bg: null },
+    { title: '像素点 - 汇聚国内外高清摄影作品分享平台！', path: 'Portfolio/我的网页.html', bg: 'Portfolio/bgimgs/像素点摄影平台.png' }
+  ],
+
+  
+  certs: [
+    {
+      name: '人工智能训练师证书（初级）',
+      en: 'CERTIFICATE OF ARTIFICIAL INTELLIGENCE TRAINER (JUNIOR)',
+      img: 'cert/ait-certificate.jpg',
+      org: '达摩院-机器智能技术事业部（Intelligent DAMO）',
+      no: 'AIT260925160633000102',
+      grant: '2026 年 9 月 25 日',
+      expire: '2027 年 9 月 25 日',
+      desc: '已完成达摩院智能客服“人工智能训练师”初级培训课程且认证合格。'
+    }
+  ],
+
+  
+  outlook: [
+    {
+      title: '短期目标',
+      time: '0 - 1 年',
+      cls: '',
+      items: [
+        '系统熟练 Python 核心技能',
+        '深入实践 Vibe Coding，学会高效使用 AI 编程工具进行代码生成、调试与重构，提升开发效率。',
+        '探索 AIGC 方向，学会操作 AI Agent 工作流（如扣子、WorkBuddy 等平台），能自主搭建自动化任务流。'
+      ]
+    },
+    {
+      title: '中期目标',
+      time: '1 - 3 年',
+      cls: 'phase--mid',
+      items: [
+        '参加理论与探究类学科竞赛，通过实验项目积累科研经验。',
+        '争取获得校级及以上奖学金，考取多方面，多维度的证书，提升核心实力与竞争力。'
+      ]
+    },
+    {
+      title: '长期目标',
+      time: '3 年以上',
+      cls: 'phase--long',
+      items: [
+        '备考研究生，方向聚焦 AIGC 领域（生成式模型、多模态、AI 内容创作），完成从本科到研究生的衔接，进入 AI 相关研究或工程岗位。'
+      ]
+    }
+  ],
+
+  
+  social: [
+    {
+      name: 'GitHub',
+      url: 'https://github.com/fangjihang/fangjiahang.github.io',
+      d: 'M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.26.82-.577v-2.234c-3.338.724-4.033-1.416-4.033-1.416-.546-1.385-1.333-1.755-1.333-1.755-1.09-.744.084-.729.084-.729 1.205.084 1.838 1.238 1.838 1.238 1.07 1.835 2.807 1.305 3.492.998.108-.776.417-1.305.76-1.605-2.665-.3-5.467-1.332-5.467-5.93 0-1.31.467-2.38 1.236-3.22-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23A11.5 11.5 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.48 5.92.43.37.814 1.102.814 2.222v3.293c0 .32.218.694.825.576C20.565 21.796 24 17.297 24 12c0-6.63-5.37-12-12-12z'
+    },
+    {
+      name: 'Gitee',
+      url: 'https://gitee.com/fangjiahang/toy-spider-web',
+      d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.8 10.4l-3.2 3.2a.4.4 0 01-.56 0L8.76 11.32a.4.4 0 11.56-.56l2.96 2.96 2.96-2.96a.4.4 0 11.56.56zm0-4l-3.2 3.2a.4.4 0 01-.56 0L8.76 7.32a.4.4 0 11.56-.56l2.96 2.96 2.96-2.96a.4.4 0 11.56.56z'
+    },
+    {
+      name: 'CSDN',
+      url: 'https://blog.csdn.net/xu_he_',
+      d: 'M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm-1.5 5h3v6h-3V5zm-4 8h11v2.5h-4V19h-3v-3.5h-4V13z'
+    }
+  ],
+
+  reduceMotion: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+};
+
+(function () {
+  'use strict';
+
+  
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function svgNode(d, size) {
+    var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '0 0 24 24');
+    s.setAttribute('fill', 'currentColor');
+    s.setAttribute('width', size);
+    s.setAttribute('height', size);
+    var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', d);
+    s.appendChild(p);
+    return s;
+  }
+  
+  function codeBtn(href) {
+    var a = el('a', 'inline-flex items-center gap-2 mt-[18px] px-[18px] py-[10px] self-start border-2 border-line rounded-none bg-surface text-ink text-[0.88rem] font-bold shadow-nb transition-all duration-100 hover:bg-grape hover:text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-nb-sm active:translate-x-1 active:translate-y-1 active:shadow-none');
+    a.href = href;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.appendChild(el('i', 'ri-code-s-line text-[16px]'));
+    a.appendChild(el('span', null, '查看代码'));
+    return a;
+  }
+
+  
+  function renderSkills() {
+    var wrap = document.getElementById('skillGrid');
+    if (!wrap) return;
+    RESUME.skills.forEach(function (g) {
+      var card = el('div', 'skill-card reveal bg-surface border-2 border-line rounded-none p-6 shadow-nb transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-nb-xl' + (g.wide ? ' col-span-full' : ''));
+      var head = el('div', 'flex items-center gap-3 mb-5');
+      head.appendChild(el('div', 'skill-idx w-11 h-11 flex-shrink-0 flex items-center justify-center bg-lemon border-2 border-line shadow-nb-sm text-black font-bold text-base rotate-[-3deg]', g.idx));
+      var box = el('div');
+      box.appendChild(el('div', 'text-[1.08rem] font-black tracking-normal', g.name));
+      if (g.note) box.appendChild(el('div', 'text-[0.78rem] text-ink/70 mt-1 font-medium', g.note));
+      head.appendChild(box);
+      card.appendChild(head);
+
+      var list = el('div', 'grid gap-4' + (g.wide ? ' gap-x-7 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]' : ''));
+      g.items.forEach(function (it) {
+        var item = el('div');
+        var top = el('div', 'flex justify-between text-[0.85rem] text-ink mb-[6px] font-medium');
+        top.appendChild(el('span', null, it[0]));
+        top.appendChild(el('b', 'text-black font-bold bg-mint px-[6px] py-px', it[1] + '%'));
+        item.appendChild(top);
+        var bar = el('div', 'h-4 bg-raised border-2 border-line rounded-none overflow-hidden');
+        var fill = el('i', 'block h-full w-0 bg-mint border-r-2 border-line');
+        fill.setAttribute('data-v', it[1]);
+        bar.appendChild(fill);
+        item.appendChild(bar);
+        list.appendChild(item);
+      });
+      card.appendChild(list);
+      if (g.extra) card.appendChild(el('div', 'mt-5 pt-4 border-t-2 border-dashed border-line text-[0.78rem] text-ink leading-[1.9] tracking-[0.3px]', g.extra));
+      wrap.appendChild(card);
+    });
+  }
+
+  
+  function renderProjects() {
+    var wrap = document.getElementById('projectGrid');
+    if (!wrap) return;
+    RESUME.projects.forEach(function (p) {
+      var card = el('div', 'p-card reveal flex flex-col bg-surface border-2 border-line rounded-none p-6 shadow-nb transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-nb-xl');
+      card.appendChild(el('div', 'text-[1.08rem] font-black tracking-normal', p.name));
+      card.appendChild(el('div', 'mt-2 text-[0.78rem] text-ink/70 font-medium', p.meta));
+
+      var ul = el('ul', 'p-list mt-4 list-none flex-1');
+      p.points.forEach(function (t) { ul.appendChild(el('li', 'relative pl-[18px] text-[0.88rem] text-ink leading-[1.75]', t)); });
+      card.appendChild(ul);
+
+      if (p.note) card.appendChild(el('div', 'mt-4 text-[0.74rem] text-ink/75 leading-[1.8] break-all', p.note));
+
+      var chips = el('div', 'chips flex flex-wrap gap-2 mt-4');
+      p.stack.forEach(function (s) { chips.appendChild(el('span', 'chip text-[0.72rem] px-[10px] py-1 rounded-none text-black bg-sky border-2 border-line shadow-nb-sm font-bold', s)); });
+      card.appendChild(chips);
+
+      if (p.evidence) card.appendChild(el('div', 'mt-4 text-[0.74rem] text-ink/75 leading-[1.8] break-all', p.evidence));
+      card.appendChild(codeBtn(p.link));
+      wrap.appendChild(card);
+    });
+  }
+
+  
+  function renderWorks() {
+    var wrap = document.getElementById('workGrid');
+    if (!wrap) return;
+    var grads = [
+      'linear-gradient(135deg, #00d4ff, #a855f7)',
+      'linear-gradient(135deg, #a855f7, #ec4899)',
+      'linear-gradient(135deg, #ec4899, #00d4ff)'
+    ];
+    RESUME.works.forEach(function (w, i) {
+      var card = el('div', 'w-card reveal p-0 overflow-hidden cursor-pointer bg-surface border-2 border-line rounded-none shadow-nb transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-nb-xl');
+
+      var thumb = el('div', 'h-40 px-4 flex items-center justify-center text-center font-bold text-[0.95rem] tracking-[1px] text-ink relative border-b-2 border-line');
+      
+      if (w.bg) {
+        thumb.className += ' bg-raised bg-cover bg-center bg-no-repeat';
+        thumb.style.backgroundImage = "linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url('" + w.bg + "')";
+      } else {
+        
+        thumb.style.background = grads[i % grads.length];
+      }
+      thumb.appendChild(el('span', 'w-thumb-num relative z-[1] text-[1.5rem] font-black tracking-[1px] text-black bg-mint border-2 border-line shadow-nb-sm px-3 py-[2px] rotate-[-3deg]', ('0' + (i + 1)).slice(-2)));
+      card.appendChild(thumb);
+
+      var body = el('div', 'px-5 pt-[18px] pb-5');
+      body.appendChild(el('div', 'text-base font-black tracking-normal', w.title));
+      body.appendChild(el('div', 'mt-2 text-[0.72rem] text-ink/65 break-all', w.path));
+      body.appendChild(codeBtn(GH_BLOB + encodeURI(w.path)));
+      card.appendChild(body);
+
+      wrap.appendChild(card);
+    });
+  }
+
+  
+  function renderCerts() {
+    var wrap = document.getElementById('certGrid');
+    if (!wrap) return;
+    if (!RESUME.certs.length) {
+      wrap.appendChild(el('div', 'text-[0.88rem] text-ink/70 tracking-[1px]', '证书照片待上传，暂不展示内容。'));
+      return;
+    }
+    var canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+    RESUME.certs.forEach(function (c) {
+      var flip = el('div', 'cert-flip reveal max-w-[680px]');
+      flip.setAttribute('tabindex', '0');
+      flip.setAttribute('role', 'group');
+      flip.setAttribute('aria-label', c.name + ' · 悬停或聚焦可翻转查看证书原件与信息');
+
+      var inner = el('div', 'cert-flip__inner');
+
+      
+      var front = el('div', 'cert-flip__face flex items-center justify-center bg-surface border-2 border-line rounded-none shadow-nb p-3');
+      if (c.img) {
+        var img = el('img', 'block w-full h-auto object-contain');
+        img.src = c.img;
+        img.alt = '人工智能训练师证书（初级）原件';
+        img.loading = 'lazy';
+        front.appendChild(img);
+      }
+      inner.appendChild(front);
+
+      
+      var back = el('div', 'cert-flip__back cert-flip__face flex flex-col bg-surface border-2 border-line rounded-none shadow-nb p-6');
+
+      var box = el('div', 'flex gap-[18px] items-start');
+      var badge = el('div', 'w-[50px] h-[50px] flex-shrink-0 flex items-center justify-center bg-grape border-2 border-line shadow-nb-sm text-black rotate-[-2.5deg]');
+      var bs = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      bs.setAttribute('viewBox', '0 0 24 24');
+      bs.setAttribute('fill', 'none');
+      bs.setAttribute('stroke', 'currentColor');
+      bs.setAttribute('stroke-width', '2');
+      bs.setAttribute('stroke-linecap', 'round');
+      bs.setAttribute('stroke-linejoin', 'round');
+      bs.setAttribute('width', '22');
+      bs.setAttribute('height', '22');
+      ['M6 3h12v5a6 6 0 0 1-12 0z', 'M9 16l-1 5 4-2.5 4 2.5-1-5'].forEach(function (d) {
+        var pth = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        pth.setAttribute('d', d);
+        bs.appendChild(pth);
+      });
+      badge.appendChild(bs);
+      box.appendChild(badge);
+
+      var info = el('div');
+      info.appendChild(el('div', 'text-[1.05rem] font-black tracking-normal text-ink', c.name));
+      if (c.en) info.appendChild(el('div', 'mt-1 text-[0.72rem] text-ink/70 tracking-[0.5px]', c.en));
+
+      var meta = el('div', 'mt-[14px] text-[0.82rem] text-ink');
+      [['颁发机构', c.org], ['证书编号', c.no], ['领证日期', c.grant], ['到期日期', c.expire]]
+        .forEach(function (row) {
+          if (!row[1]) return;
+          var d = el('div', 'flex gap-[10px] mb-[5px]');
+          d.appendChild(el('em', 'not-italic text-ink/70 min-w-[76px]', row[0]));
+          d.appendChild(el('span', null, row[1]));
+          meta.appendChild(d);
+        });
+      info.appendChild(meta);
+      if (c.desc) info.appendChild(el('div', 'mt-3 text-[0.82rem] text-ink leading-[1.75]', c.desc));
+      box.appendChild(info);
+      back.appendChild(box);
+      back.appendChild(el('div', 'mt-auto pt-5 text-[0.72rem] text-ink/70 tracking-[0.5px]', canHover ? '悬停 / 聚焦卡片查看证书原件' : '轻触卡片翻转查看证书原件'));
+
+      inner.appendChild(back);
+      flip.appendChild(inner);
+      wrap.appendChild(flip);
+
+      
+      if (!canHover) {
+        flip.addEventListener('click', function () { flip.classList.toggle('is-flipped'); });
+      }
+    });
+  }
+
+  
+  function renderOutlook() {
+    var wrap = document.getElementById('outlookWrap');
+    if (!wrap) return;
+    RESUME.outlook.forEach(function (p) {
+      var card = el('div', 'reveal bg-surface border-2 border-line rounded-none p-6 shadow-nb transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-nb-xl');
+      var phase = el('div', 'phase border-l-4 py-[2px] pl-5 ' + (p.cls === 'phase--mid' ? 'border-grape' : p.cls === 'phase--long' ? 'border-sky' : 'border-mint'));
+      var head = el('div', 'flex items-baseline gap-3 flex-wrap');
+      head.appendChild(el('div', 'text-[1.08rem] font-black tracking-normal', p.title));
+      head.appendChild(el('div', 'text-[0.76rem] font-bold px-[10px] py-[3px] bg-lemon border-2 border-line shadow-nb-sm text-black rotate-[2deg]', p.time));
+      phase.appendChild(head);
+      var ul = el('ul', 'mt-3 list-none');
+      p.items.forEach(function (t) { ul.appendChild(el('li', 'relative pl-[18px] text-[0.88rem] text-ink leading-[1.8]', t)); });
+      phase.appendChild(ul);
+      card.appendChild(phase);
+      wrap.appendChild(card);
+    });
+  }
+
+  
+  function renderSocial() {
+    var wrap = document.getElementById('socialBar');
+    if (!wrap) return;
+    var skin = ['bg-mint', 'bg-sky', 'bg-grape', 'bg-lemon'];
+    RESUME.social.forEach(function (s, i) {
+      var a = el('a', 'social-link w-full md:w-auto md:flex-1 min-w-0 inline-flex items-center justify-center gap-2 px-[22px] py-4 rounded-none text-base font-black tracking-normal border-2 border-line text-black shadow-nb transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-nb-sm active:translate-x-1 active:translate-y-1 active:shadow-none ' + (skin[i] || 'bg-lemon'));
+      a.href = s.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.appendChild(svgNode(s.d, 20));
+      a.appendChild(el('span', null, s.name));
+      wrap.appendChild(a);
+    });
+  }
+
+  
+  function initReveal() {
+    var items = document.querySelectorAll('.reveal');
+    
+    var bars = document.querySelectorAll('[data-v]');
+
+    function fillBars(scope) {
+      var list = scope ? scope.querySelectorAll('[data-v]') : bars;
+      Array.prototype.forEach.call(list, function (b) {
+        b.style.width = b.getAttribute('data-v') + '%';
+      });
+    }
+
+    if (!('IntersectionObserver' in window) || RESUME.reduceMotion) {
+      Array.prototype.forEach.call(items, function (n) { n.classList.add('is-in'); });
+      fillBars(null);
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('is-in');
+        fillBars(e.target);
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.12 });
+    Array.prototype.forEach.call(items, function (n) { io.observe(n); });
+  }
+
+  
+  function initNav() {
+    var links = document.querySelectorAll('.topnav .nav-links a');
+    var secs = [];
+    Array.prototype.forEach.call(links, function (a) {
+      var t = document.querySelector(a.getAttribute('href'));
+      if (t) secs.push(t);
+    });
+    function spy() {
+      var y = window.pageYOffset + 120;
+      var cur = '';
+      secs.forEach(function (s) { if (s.offsetTop <= y) cur = '#' + s.id; });
+      Array.prototype.forEach.call(links, function (a) {
+        a.classList.toggle('is-active', a.getAttribute('href') === cur);
+      });
+    }
+
+    var top = document.getElementById('toTop');
+    function toggleTop() {
+      if (top) top.classList.toggle('show', window.pageYOffset > 600);
+    }
+
+    window.addEventListener('scroll', function () { spy(); toggleTop(); }, { passive: true });
+    spy();
+    toggleTop();
+
+    if (top) {
+      top.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: RESUME.reduceMotion ? 'auto' : 'smooth' });
+      });
+    }
+  }
+
+  
+  function initCopyMail() {
+    var btn = document.getElementById('copyMail');
+    var label = document.getElementById('mailText');
+    if (!btn || !label) return;
+    var addr = ['fangjiahang07', 'gmail.com'].join('@');
+    function done(ok) {
+      label.textContent = ok ? '已复制 · ' + addr : addr;
+      setTimeout(function () { label.textContent = '复制邮箱'; }, 1800);
+    }
+    btn.addEventListener('click', function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(addr).then(function () { done(true); }, function () { done(false); });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = addr; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+        document.body.removeChild(ta);
+        done(ok);
+      }
+    });
+  }
+
+  
+  function initCursor() {
+    var ring = document.getElementById('cursorRing');
+    if (!ring || RESUME.reduceMotion) return;
+    if (window.matchMedia && !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+    var tx = window.innerWidth / 2, ty = window.innerHeight / 2;
+    var cx = tx, cy = ty, shown = false;
+
+    document.addEventListener('mousemove', function (e) {
+      tx = e.clientX; ty = e.clientY;
+      if (!shown) { shown = true; cx = tx; cy = ty; ring.style.opacity = '1'; }
+    }, { passive: true });
+    document.addEventListener('mouseleave', function () { shown = false; ring.style.opacity = '0'; });
+    document.addEventListener('mousedown', function () { ring.classList.add('is-down'); });
+    document.addEventListener('mouseup', function () { ring.classList.remove('is-down'); });
+
+    var hoverables = 'a, button, .w-card, input, textarea, [role="button"], [tabindex]';
+    document.addEventListener('mouseover', function (e) {
+      if (e.target.closest && e.target.closest(hoverables)) ring.classList.add('is-hover');
+    });
+    document.addEventListener('mouseout', function (e) {
+      if (e.target.closest && e.target.closest(hoverables)) ring.classList.remove('is-hover');
+    });
+
+    (function loop() {
+      cx += (tx - cx) * 0.22;
+      cy += (ty - cy) * 0.22;
+      ring.style.transform = 'translate(' + cx + 'px,' + cy + 'px)';
+      requestAnimationFrame(loop);
+    })();
+  }
+
+  
+  renderSkills();
+  renderProjects();
+  renderWorks();
+  renderCerts();
+  renderOutlook();
+  renderSocial();
+  initCopyMail();
+  initReveal();
+  initNav();
+  initCursor();
+})();
+</script>
+
+</body>
+</html>
